@@ -1,0 +1,11 @@
+Model Information:
+* title:	FX-50
+* source:	https://sketchfab.com/3d-models/fx-50-108f780fe86d4587a062b34e78c97142
+* author:	Luis  Torres (https://sketchfab.com/luiseduardotorres99)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "FX-50" (https://sketchfab.com/3d-models/fx-50-108f780fe86d4587a062b34e78c97142) by Luis  Torres (https://sketchfab.com/luiseduardotorres99) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

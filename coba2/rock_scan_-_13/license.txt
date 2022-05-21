@@ -1,0 +1,11 @@
+Model Information:
+* title:	Rock Scan - 13
+* source:	https://sketchfab.com/3d-models/rock-scan-13-8ffb23ed14824fc29f53dde52398e22b
+* author:	Loïc Norgeot (https://sketchfab.com/norgeotloic)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Rock Scan - 13" (https://sketchfab.com/3d-models/rock-scan-13-8ffb23ed14824fc29f53dde52398e22b) by Loïc Norgeot (https://sketchfab.com/norgeotloic) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

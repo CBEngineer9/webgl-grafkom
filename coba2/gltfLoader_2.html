@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="three.js"></script>
+    <script src="./node_modules/three/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="./node_modules/three/examples/js/loaders/DRACOLoader.js"></script>
+    <script src="./node_modules\three\examples\js\controls\OrbitControls.js"></script>
+    <script src="./node_modules\three\examples\js\controls\FirstPersonControls.js"></script>
+</head>
+<body>
+    
+</body>
+<script>
+    // scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color( 0x333333 );
+
+    // camera
+    const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+    camera.position.set( 1, 0, 0 );
+    camera.lookAt( 0, 0, 0 );
+
+    // renderer
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    document.body.appendChild( renderer.domElement );
+
+    // Cube
+    // const geometry = new THREE.BoxGeometry();
+    // const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+    // const cube = new THREE.Mesh( geometry, material );
+    // scene.add( cube );
+
+    // light
+    const light = new THREE.PointLight( 0xffffff, 10, 100 );
+    light.position.set( 10, 10, 0 );
+    scene.add( light );
+
+    // raycaster instance
+    const raycaster = new THREE.Raycaster();
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement)
+    // const controls = new THREE.FirstPersonControls(camera, renderer.domElement)
+    // controls.movementSpeed = 100;
+
+    // loader
+    const loader = new THREE.GLTFLoader();
+    function update () {
+        mixer.update( deltaSeconds );
+    }
+    
+    var object; 
+    var clips = [];
+    var reloadActions = [];
+    var reloadActionsState = 0;
+    
+    // Animation player
+    var mixer;
+
+    // clock
+    const clock = new THREE.Clock();
+
+    // on resize
+    window.addEventListener( 'resize', onWindowResize );
+
+    loader.load(
+        "./fx-50/scene.gltf",
+        // model loaded
+        function(gltf){
+            scene.add(gltf.scene);
+
+            clips = gltf.animations; // Array<THREE.AnimationClip>
+            object = gltf.scene; // THREE.Group
+            gltf.scenes; // Array<THREE.Group>
+            gltf.cameras; // Array<THREE.Camera>
+            gltf.asset; // Object
+
+            object.animations = gltf.animations;
+
+            mixer = new THREE.AnimationMixer(object);
+
+            
+            let action = mixer.clipAction(clips[1])
+            action.timeScale = -1;
+            action.setLoop(THREE.LoopOnce);
+            action.clampWhenFinished = true;
+            action.reset();
+            // action.time = action.getClip().duration;
+            // action.paused = true;
+            // action.play();
+            // mixer.time = action.getClip().duration-1;
+            reloadActions.push(action);
+            
+            action = mixer.clipAction(clips[0])
+            action.reset();
+            action.timeScale = 1;
+            action.paused = false;
+            action.setLoop(THREE.LoopOnce);
+            reloadActions.push(action);
+
+            action = mixer.clipAction(clips[0].clone())
+            action.reset();
+            action.timeScale = -1;
+            action.setLoop(THREE.LoopOnce);
+            action.clampWhenFinished = true;
+            reloadActions.push(action);
+
+            action = mixer.clipAction(clips[1].clone())
+            action.reset();
+            action.timeScale = 1;
+            action.paused = false;
+            action.setLoop(THREE.LoopOnce);
+            // action.crossFadeFrom(reloadActions[0],1000,true);
+            action.clampWhenFinished = true;
+            // action.setLoop(THREE.LoopPingPong, 2);
+            reloadActions.push(action);
+
+
+            // action.play();
+
+            // console.log(mixer);
+            // reloadActions.forEach((action) => {
+            //     console.log('playing ' + action.getClip().name);
+            //     action.play();
+            // });
+
+            reloadActions[0].play();
+            mixer.addEventListener( 'finished', ( event ) => {
+                console.log(event);
+                reloadActionsState++;
+                if (reloadActionsState < reloadActions.length){
+                    // animationAction1.setLoop( THREE.LoopRepeat ,4 );
+                    let action = reloadActions[reloadActionsState];
+                    // reloadActions[reloadActionsState-1].fadeOut(10);
+                    if (action.timeScale < 0){
+                        action.time = action.getClip().duration;
+                    } else {
+                        action.reset();
+                    }
+                    action.play(); 
+                    console.log('playing ' + action.getClip().name);
+
+                }
+
+            } );
+
+            animate();
+        },
+
+        // model loading
+        function(xhr){
+            console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+        },
+        // called when loading has errors
+        function ( error ) {
+            console.log( 'An error happened' );
+        }
+    );
+
+    // camera.position.z = 5;
+    function animate() {
+        requestAnimationFrame( animate );
+
+        // rock.rotation.x += 0.05;
+        // rock.rotation.y += 0.05;
+
+        // clips.forEach(clip => {
+        //     rock.animations[clip].play();
+        // });
+
+        // mixer.update(clock.getDelta() * mixer.timeScale);
+        mixer.update(clock.getDelta());
+
+        controls.update(clock.getDelta())
+
+        renderer.render( scene, camera );
+    }
+
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+    }
+
+</script>
+</html>
