@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <script src="three.js"></script>
-    <script src="./node_modules/three/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="./node_modules/three/examples/js/loaders/DRACOLoader.js"></script>
-    <script src="./node_modules\three\examples\js\controls\OrbitControls.js"></script>
-    <script src="./node_modules\three\examples\js\controls\FirstPersonControls.js"></script>
+    <script src="../node_modules/three/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="../node_modules/three/examples/js/loaders/DRACOLoader.js"></script>
+    <script src="../node_modules\three\examples\js\controls\OrbitControls.js"></script>
+    <script src="../node_modules\three\examples\js\controls\FirstPersonControls.js"></script>
 </head>
 <body>
     
@@ -83,7 +83,7 @@
 
             mixer = new THREE.AnimationMixer(object);
 
-            
+            // AnimationAction
             let action = mixer.clipAction(clips[1])
             action.timeScale = -1;
             action.setLoop(THREE.LoopOnce);
