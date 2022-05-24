@@ -33,7 +33,7 @@ var keyBinds = {
 var pressedKeys = {}
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 25 );
 camera.position.set(0, 0, 5);
 camera.lookAt(0, 0, 0);
 
@@ -41,10 +41,23 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
-// const geometry = new THREE.BoxGeometry();
-// const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-// const cube = new THREE.Mesh( geometry, material );
-// scene.add( cube );
+const geometry = new THREE.BoxGeometry();
+const material = new THREE.MeshStandardMaterial( { color: 0x00ff00 } );
+var cube = new THREE.Mesh( geometry, material );
+cube.position.set(0,5,10)
+scene.add( cube );
+cube = new THREE.Mesh( geometry, material );
+cube.position.set(0,5,-10)
+scene.add( cube );
+cube = new THREE.Mesh( geometry, material );
+cube.position.set(10,5,0)
+scene.add( cube );
+cube = new THREE.Mesh( geometry, material );
+cube.position.set(-10,5,0)
+scene.add( cube );
+cube = new THREE.Mesh( geometry, material );
+cube.position.set(0,-5,0)
+scene.add( cube );
 
 // const controls = new THREE.OrbitControls( camera, renderer.domElement );
 // var controls = new THREE.FirstPersonControls( camera, renderer.domElement );
@@ -58,6 +71,8 @@ document.body.appendChild( renderer.domElement );
 // controls.update();
 
 var controls = new THREE.PointerLockControls( camera, document.body );
+controls.maxPolarAngle = Math.PI * 5 / 6;
+controls.minPolarAngle = Math.PI * 1 / 6;
 
 // add event listener to show/hide a UI (e.g. the game's menu)
 // controls.addEventListener( 'click', function () {
@@ -77,8 +92,8 @@ const light = new THREE.PointLight( 0xffffff, 10, 10 );
 light.position.set( 2, 3, 5 );
 scene.add( light );
 
-const light2 = new THREE.PointLight( 0xffffff, 10, 10 );
-light2.position.set( 0, -3, 0 );
+const light2 = new THREE.PointLight( 0xffffff, 10, 20 );
+light2.position.set( 0, 8, 0 );
 scene.add( light2 );
 
 const sphereSize = 0.1;
@@ -88,11 +103,6 @@ const pointLightHelper2 = new THREE.PointLightHelper( light2, sphereSize );
 scene.add( pointLightHelper );
 
 const loader = new THREE.GLTFLoader();
-// loader.load( './models/little_witch_academia/scene.gltf', function ( gltf ) {
-//   scene.add( gltf.scene );
-// }, undefined, function ( error ) {
-//   console.error( error );
-// } );
 
 loader.load( './models/astolfo_hoodie/scene.gltf', function ( gltf ) {
   scene.add( gltf.scene );
@@ -136,16 +146,23 @@ function move(pressedKeys) {
 }
 
 //PointerLockControls
-var body = document.getElementsByTagName('body')[0];
-body.onkeydown = function (e) {
+controls.addEventListener('change', function (e) {
+  // console.log('constrols change', e);
+})
+
+document.body.onkeydown = function (e) {
   pressedKeys[e.key] = true;
+  if (e.key == 'l') {
+    controls.isLocked = !controls.isLocked;
+    console.log('control is now locked?', controls.isLocked);
+  }
 }
 
-body.onkeyup = function(e) {
+document.body.onkeyup = function(e) {
   pressedKeys[e.key] = false;
 }
 
-body.onclick = function (e) {
+document.body.onclick = function (e) {
   controls.lock();
 }
 </script>
