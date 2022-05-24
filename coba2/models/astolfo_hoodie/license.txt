@@ -1,0 +1,11 @@
+Model Information:
+* title:	Astolfo in a Hoodie
+* source:	https://sketchfab.com/3d-models/astolfo-in-a-hoodie-2d2530abef0a4e4caa32d0d8d525b205
+* author:	Heckens (https://sketchfab.com/commanderpandayt)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Astolfo in a Hoodie" (https://sketchfab.com/3d-models/astolfo-in-a-hoodie-2d2530abef0a4e4caa32d0d8d525b205) by Heckens (https://sketchfab.com/commanderpandayt) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
