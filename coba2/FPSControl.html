@@ -19,21 +19,13 @@
   <!-- <script src="./node_modules/three/examples/js/controls/OrbitControls.js"></script> -->
   <script src="../node_modules/three/examples/js/controls/PointerLockControls.js"></script>
   <!-- <script src="./node_modules/three/src/core/Clock.js"></script> -->
+  <script src="./FPSControls.js"></script>
 </body>
 </html>
 <script>
-var movementAmount = 0.05;
-var controlsDirection = new THREE.Vector3();
-var keyBinds = {
-  "up": ['w', 'W', 'ArrowUp'],
-  "right": ['d', 'D', 'ArrowRight'],
-  "down": ['s', 'S', 'ArrowDown'],
-  "left": ['a', 'A', 'ArrowLeft'],
-}
-var pressedKeys = {}
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 25 );
+var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 25 );
 camera.position.set(0, 0, 5);
 camera.lookAt(0, 0, 0);
 
@@ -110,57 +102,17 @@ loader.load( './models/astolfo_hoodie/scene.gltf', function ( gltf ) {
   console.error( error );
 } );
 
+initFPSControls(document.body, camera);
+
 function animate() {
   requestAnimationFrame( animate );
-  move(pressedKeys);
+  animateControls(camera);
+  // move(pressedKeys, camera);
   renderer.render( scene, camera );
 }
 animate();
 
-/**
- *  Move the camera based on pressed keys.
- *  @param {dictionary} pressedKeys The list of pressed keys.
- */
-function move(pressedKeys) {
-  for (const[key, value] of Object.entries(keyBinds)) {
-    value.forEach(item => {
-      if (pressedKeys[item] == true) {
-        switch (key) {
-          case 'up':
-            controls.moveForward(movementAmount);
-            break;
-          case 'right':
-            controls.moveRight(movementAmount);
-            break;
-          case 'down':
-            controls.moveForward(-movementAmount);
-            break;
-          case 'left':
-            controls.moveRight(-movementAmount);
-            break;
-        }
-      }
-
-    });
-  }
-}
-
 //PointerLockControls
-controls.addEventListener('change', function (e) {
-  // console.log('constrols change', e);
-})
-
-document.body.onkeydown = function (e) {
-  pressedKeys[e.key] = true;
-  if (e.key == 'l') {
-    controls.isLocked = !controls.isLocked;
-    console.log('control is now locked?', controls.isLocked);
-  }
-}
-
-document.body.onkeyup = function(e) {
-  pressedKeys[e.key] = false;
-}
 
 document.body.onclick = function (e) {
   controls.lock();
