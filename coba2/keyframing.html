@@ -58,23 +58,60 @@
 
     const clock = new THREE.Clock();
 
-    const timesArr = [0,3]; 
-    const start = new THREE.Vector3(100,0,0);
-    const end = new THREE.Vector3(0,0,100);
+    // path
+    const path = new THREE.Path();
+    
+    // path.currentPoint = 
+    // path.lineTo( 0, 0.8 );
+    // path.quadraticCurveTo( 0, 1, 0.2, 1 );
+    // path.lineTo( 1, 1 );
+    path.ellipse(0,0, 100,100, 0, 2*Math.PI, false);
+    const pathPoints = path.getPoints();
+
+    const timesArr = [];
+    // const start = new THREE.Vector3(100,0,0);
+    // const end = new THREE.Vector3(0,0,100);
+    const valuesXArr = [];
+    const valuesZArr = [];
+
     const valuesArr = [];
 
-    start.toArray(valuesArr,valuesArr.length) // print satu satu komponen ke array, dengan offset length = dibelakang
-    end.toArray(valuesArr,valuesArr.length)
+    // start.toArray(valuesArr,valuesArr.length) // print satu satu komponen ke array, dengan offset length = dibelakang
+    // end.toArray(valuesArr,valuesArr.length)
+
+    for (let i = 0; i < pathPoints.length; i++) {
+        const element = pathPoints[i];
+        timesArr.push(i);
+
+        valuesXArr.push(element.x);
+        valuesZArr.push(element.y);
+
+        valuesArr.push(element.x);
+        valuesArr.push(0);
+        valuesArr.push(element.y);
+
+        console.log("a");
+    }
 
     // const posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateDiscrete);
     // const posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateLinear);
-    const posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateSmooth);
+    const posKFrame = new THREE.NumberKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateSmooth);
+    const posXKFrame = new THREE.NumberKeyframeTrack('.position[x]',timesArr,valuesXArr, THREE.InterpolateSmooth);
+    const posZKFrame = new THREE.NumberKeyframeTrack('.position[z]',timesArr,valuesZArr, THREE.InterpolateSmooth);
 
-    const glideClip = new THREE.AnimationClip(null,10,[posKFrame]);
+    const glideClip = new THREE.AnimationClip(null,timesArr[timesArr.length-1],[posKFrame]);
+    const glideXClip = new THREE.AnimationClip(null,pathPoints.length,[posXKFrame]);
+    const glideZClip = new THREE.AnimationClip(null,pathPoints.length,[posZKFrame]);
 
     const mixer = new THREE.AnimationMixer(camera);
+    // const actionX = mixer.clipAction(glideXClip);
+    // actionX.play();
+    // const actionZ = mixer.clipAction(glideZClip);
+    // actionZ.play();
     const action = mixer.clipAction(glideClip);
     action.play();
+
+    
 
     function animate() {
         requestAnimationFrame( animate );
