@@ -19,11 +19,14 @@ var movementKeyBinds = {
 }
 var pressedKeys = {};
 
+var FPSCollisionBox = new THREE.Box3();
+
 function initFPSControls(domElement, camera) {
   domElement.onkeydown = onKeyDown;
   domElement.onkeyup = onKeyUp;
   initialFOV = camera.fov;
   sprintFOV = camera.fov + 10;
+  FPSCollisionBox.setFromCenterAndSize( new THREE.Vector3(camera.position.x, camera.position.y - 0.9, camera.position.z), new THREE.Vector3( 1, 2, 1 ) );
 }
 
 function onKeyDown(event) {
@@ -64,40 +67,94 @@ function sprint(camera) {
   
 }
 
+function updateCollisionBox() {
+  FPSCollisionBox.setFromCenterAndSize( new THREE.Vector3(camera.position.x, camera.position.y - 0.9, camera.position.z), new THREE.Vector3( 1, 2, 1 ) );
+}
 
 /**
  *  Animate the controls movement
  *  @param {Camera} camera 
  */
-function animateControls(camera) {
-  move(pressedKeys, camera);
+function animateControls(camera, controls, boxes) {
+  move(pressedKeys, camera, controls);
+  
 }
 
 
-function move(pressedKeys, camera) {
+function move(pressedKeys, camera, controls) {
   for (const[key, value] of Object.entries(movementKeyBinds)) {
     if (key == 'sprint') sprint(camera);
     for (let i = 0; i < value.length; i++) {
       let item = value[i];
       if (!pressedKeys[item]) continue;
-      switch (key) {
-        case 'up':
-          controls.moveForward(deltaMovement);
-          break;
-        case 'right':
-          controls.moveRight(deltaMovement);
-          break;
-        case 'down':
-          controls.moveForward(-deltaMovement);
-          break;
-        case 'left':
-          controls.moveRight(-deltaMovement);
-          break;
-        // case 'jump':
-        //   break;
-        // case 'crouch':
-        //   break;
+      try {
+        switch (key) {
+          case 'up':
+            controls.moveForward(deltaMovement);
+            updateCollisionBox();
+            boxes.forEach(item => {
+              if (FPSCollisionBox.intersectsBox(item)) {
+                controls.moveForward(-deltaMovement);
+                // throw "collision!";
+                console.log('up collision');
+              }
+            });
+            break;
+          case 'right':
+            controls.moveRight(deltaMovement);
+            updateCollisionBox();
+            boxes.forEach(item => {
+              if (FPSCollisionBox.intersectsBox(item)) {
+                controls.moveRight(-deltaMovement);
+                // throw "collision!";
+              }
+            });
+            break;
+          case 'down':
+            controls.moveForward(-deltaMovement);
+            updateCollisionBox();
+            boxes.forEach(item => {
+              if (FPSCollisionBox.intersectsBox(item)) {
+                controls.moveForward(deltaMovement);
+                // throw "collision!";
+              }
+            });
+            break;
+          case 'left':
+            controls.moveRight(-deltaMovement);
+            updateCollisionBox();
+            boxes.forEach(item => {
+              if (FPSCollisionBox.intersectsBox(item)) {
+                controls.moveRight(deltaMovement);
+                // throw "collision!";
+              }
+            });
+            break;
+        }
+      }
+      catch (error) {
+        console.log(error);
       }
     }
   }
 }
+
+function moveForwardTemp ( distance, vectorAwal ) {
+
+  // move forward parallel to the xz-plane
+  // assumes camera.up is y-up
+  _vector.setFromMatrixColumn( camera.matrix, 0 );
+
+  _vector.crossVectors( camera.up, _vector );
+
+  camera.position.addScaledVector( _vector, distance );
+
+};
+
+function moveRightTemp ( distance, vectorAwal ) {
+
+  _vector.setFromMatrixColumn( camera.matrix, 0 );
+
+  camera.position.addScaledVector( _vector, distance );
+
+};
