@@ -42,7 +42,7 @@
 <body>
   <div id="menu">
     <h2>Paused...</h2>
-    <h4>Double click to resume.</h4>
+    <h4>Click to resume.</h4>
   </div>
   <div id="cursor">
     +
@@ -104,12 +104,12 @@ controls.minPolarAngle = Math.PI * 1 / 6;
 
 var menu = document.getElementById('menu');
 document.body.addEventListener('click', function(e) {
-  controls.lock();
+  if (!controls.isLocked) controls.lock();
 });
 
 controls.addEventListener( 'lock', function() {
   menu.style.display = 'none';
-  animate();
+  setTimeout(animate, 1);
 });
 
 controls.addEventListener( 'unlock', function() {
