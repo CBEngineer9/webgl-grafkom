@@ -203,6 +203,7 @@ function raycasting() {
   //   intersects[i].object.material.color.set(0xffffff);
   // }
   scene.remove(scene.getObjectByName("objectHoverHelper"));
+  hoveredObject = undefined;
   for (let i = 0; i < intersects.length; i++) {
     if (intersects[i].object.name == "objectHoverHelper") continue;
     objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
@@ -247,12 +248,8 @@ function stopAllAnimation() {
   animationMixer.stopAllAction();
   let tempRoot = animationMixer.getRoot();
   let tempClips = tempRoot.animations;
-  console.log('tempClips:',tempClips);
-  
   for (let i = 0; i < tempClips.length; i++) {
     let tempClip = tempClips[i];
-    console.log('tempClip:',tempClip);
-    
     animationMixer.uncacheClip(tempClip);
     animationMixer.uncacheAction(tempClip, tempRoot);
   }
@@ -263,8 +260,7 @@ document.body.addEventListener('click', function(e) {
   if (!controls.isLocked || hoveredObject == undefined) return;
   stopAllAnimation();
   let lastObj = traverseUntilLastParent(hoveredObject.object);
-  console.log('lastObj:',lastObj);
-  if (lastObj.animations.length >= 0) animateObject(lastObj);
+  if (lastObj.animations.length > 0) animateObject(lastObj);
 })
 
 window.addEventListener( 'resize', onWindowResize );
