@@ -6,18 +6,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>coba three.js</title>
   <style>
-    body { 
-      margin: 0; 
+    body { margin: 0; }
+    #menu {
+      display: none;
+      position: absolute;
+      width: 100vw;
+      height: 100vh;
       background-color: gray;
+      opacity: 0.7;
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    #menu > * {
+      background-color: white;
+      opacity: 2;
+    }
+
+    #cursor {
+      width: 100vw;
+      height: 100vh;
+      z-index: 99;
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font: bold;
+      color: white;
+      font-size: x-large;
     }
   </style>
 </head>
 <body>
+  <div id="menu">
+    <h2>Paused...</h2>
+    <h4>Double click to resume.</h4>
+  </div>
+  <div id="cursor">
+    +
+  </div>
   <script src="../node_modules/three/build/three.js"></script>
   <script src="../node_modules\three\examples\js\loaders\GLTFLoader.js"></script>
   <!-- <script src="./node_modules/three/examples/js/controls/OrbitControls.js"></script> -->
   <!-- <script src="./node_modules/three/examples/js/controls/OrbitControls.js"></script> -->
   <script src="../node_modules/three/examples/js/controls/PointerLockControls.js"></script>
+  <script src="../node_modules\three\examples\js\postprocessing\OutlinePass.js"></script>
   <!-- <script src="./node_modules/three/src/core/Clock.js"></script> -->
   <script src="./FPSControls.js"></script>
 </body>
@@ -26,8 +61,8 @@
 
 const scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 25 );
-camera.position.set(0, 1.8, 0);
-camera.lookAt(0, 0, 0);
+camera.position.set(0, 1.8, 8);
+camera.lookAt(0, 1.8, 0);
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
@@ -35,62 +70,51 @@ document.body.appendChild( renderer.domElement );
 
 var boxes = [];
 
-const geometry = new THREE.BoxGeometry();
-const material = new THREE.MeshStandardMaterial( { color: 0x00ff00 } );
-var cube = new THREE.Mesh( geometry, material );
+// const geometry = new THREE.BoxGeometry();
+// const material = new THREE.MeshStandardMaterial( { color: 0x00ff00 } );
+var cube = new THREE.Mesh( new THREE.BoxGeometry(), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
 cube.position.set(0,1,10)
 boxes.push(new THREE.Box3().setFromObject(cube));
 scene.add( cube );
-cube = new THREE.Mesh( geometry, material );
+cube = new THREE.Mesh( new THREE.BoxGeometry(), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
 cube.position.set(0,1,-10)
 boxes.push(new THREE.Box3().setFromObject(cube));
 scene.add( cube );
-cube = new THREE.Mesh( geometry, material );
+cube = new THREE.Mesh( new THREE.BoxGeometry(), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
 cube.position.set(10,1,0)
 boxes.push(new THREE.Box3().setFromObject(cube));
 scene.add( cube );
-cube = new THREE.Mesh( geometry, material );
+cube = new THREE.Mesh( new THREE.BoxGeometry(), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
 cube.position.set(-10,1,0)
 boxes.push(new THREE.Box3().setFromObject(cube));
 scene.add( cube );
-cube = new THREE.Mesh( geometry, material );
+cube = new THREE.Mesh( new THREE.BoxGeometry(), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
 cube.position.set(0,-5,0)
 boxes.push(new THREE.Box3().setFromObject(cube));
 scene.add( cube );
 
-const helper = new THREE.Box3Helper( FPSCollisionBox, 0xffff00 );
-scene.add( helper );
+// var FPSCollisionBoxHelper = new THREE.Box3Helper( FPSCollisionBox, 0xffff00 );
+// scene.add(FPSCollisionBoxHelper);
 
-// const controls = new THREE.OrbitControls( camera, renderer.domElement );
-// var controls = new THREE.FirstPersonControls( camera, renderer.domElement );
-// controls.lookSpeed = 0.1;
-// controls.movementSpeed = 5;
-// controls.constrainVertical = true;
-// controls.verticalMin = Math.PI * 1 / 3;
-// controls.verticalMax = Math.PI * 2 / 3;
-// controls.heightSpeed = true;
-// const controls = new THREE.FirstPersonControls( camera, renderer.domElement );
-// controls.update();
-
-
+const clock = new THREE.Clock();
 
 var controls = new THREE.PointerLockControls( camera, document.body );
 controls.maxPolarAngle = Math.PI * 5 / 6;
 controls.minPolarAngle = Math.PI * 1 / 6;
 
-// add event listener to show/hide a UI (e.g. the game's menu)
-// controls.addEventListener( 'click', function () {
+var menu = document.getElementById('menu');
+document.body.addEventListener('click', function(e) {
+  controls.lock();
+});
 
-// 	menu.style.display = 'none';
+controls.addEventListener( 'lock', function() {
+	menu.style.display = 'none';
+  animate();
+});
 
-// } );
-
-// controls.addEventListener( 'unlock', function () {
-
-// 	menu.style.display = 'block';
-
-// } );
-
+controls.addEventListener( 'unlock', function() {
+	menu.style.display = 'flex';
+});
 
 const light = new THREE.PointLight( 0xffffff, 10, 10 );
 light.position.set( 2, 3, 5 );
@@ -108,29 +132,101 @@ scene.add( pointLightHelper );
 
 const loader = new THREE.GLTFLoader();
 
-loader.load( './models/astolfo_hoodie/scene.gltf', function ( gltf ) {
-  scene.add( gltf.scene );
-}, undefined, function ( error ) {
-  console.error( error );
-} );
+function update () {
+  mixer.update( deltaSeconds );
+}
+
+let mesh;
+let animations;
+var animationMixer;
+
+loader.load(
+	'./models/table/scene.gltf',
+	function (gltf) {
+		gltf.animations; // Array<THREE.AnimationClip>
+		gltf.scene; // THREE.Group
+		gltf.scenes; // Array<THREE.Group>
+		gltf.cameras; // Array<THREE.Camera>
+		gltf.asset; // Object
+    mesh = gltf.scene;
+    animations = gltf.animations;
+    mesh.position.y = -4;
+    boxes.push(new THREE.Box3().setFromObject(mesh));
+		scene.add( mesh );
+    // console.log('mesh:',mesh)
+
+    // console.log('mesh.position:',mesh.position);
+    // console.log('mesh.rotation:',mesh.rotation);
+    // console.log('mesh.scale:',mesh.scale);
+  
+    // helper = new THREE.Box3Helper( new THREE.Box3().setFromObject(mesh), 0xffff00 );
+    // scene.add(helper);
+
+    // Create an AnimationMixer, and get the list of AnimationClip instances
+    animationMixer = new THREE.AnimationMixer( mesh );
+
+    // Update the mixer on each frame
+
+    // Play a specific animation
+    var animation = animationMixer.clipAction(animations[0]);
+    animation.timeScale = 1;
+    animation.setLoop(THREE.LoopOnce);
+    animation.clampWhenFinished = true;
+    animation.enable = true;
+    animation.reset();
+    animation.play();
+    
+    animate();
+	},
+	function ( xhr ) {
+		console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+	},
+	function ( error ) {
+		console.log( 'An error happened' );
+	}
+);
+
+//init raycasting
+var raycaster = new THREE.Raycaster();
+var pointer = new THREE.Vector2();
+var objectHoverHelper;
+// var objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(mesh), 0xffff00 );
+// set pointer location to center of the window
+pointer.x = 0;
+pointer.y = 0;
+function raycasting() {
+  raycaster.setFromCamera(pointer, camera);
+  const intersects = raycaster.intersectObjects(scene.children);
+  // for (let i = 0; i < intersects.length; i++) {
+  //   intersects[i].object.material.color.set(0xffffff);
+  // }
+  scene.remove(scene.getObjectByName("objectHoverHelper"));
+  for (let i = 0; i < intersects.length; i++) {
+    if (intersects[i].object.name == "objectHoverHelper") continue;
+    objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
+    objectHoverHelper.name = "objectHoverHelper";
+    console.log('Hover: ', intersects[i]);
+    scene.add(objectHoverHelper);
+    break;
+  }
+}
+//
 
 initFPSControls(document.body, camera);
 
 function animate() {
-  requestAnimationFrame( animate );
+  console.log('controls.isLocked:',controls.isLocked)
+  if (controls.isLocked) requestAnimationFrame( animate );
+  raycasting()
   animateControls(camera, controls, boxes);
-  // move(pressedKeys, camera);
+  animationMixer.update(clock.getDelta());
   renderer.render( scene, camera );
-  // console.log(camera.position);
-
-  //update collision box
-
 }
-animate();
 
-//PointerLockControls
-
-document.body.onclick = function (e) {
-  controls.lock();
+window.addEventListener( 'resize', onWindowResize );
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize( window.innerWidth, window.innerHeight );
 }
 </script>

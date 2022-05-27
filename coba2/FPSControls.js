@@ -27,12 +27,11 @@ function initFPSControls(domElement, camera) {
 }
 
 function onKeyDown(event) {
-  let key = event.key;
-  pressedKeys[key.toLowerCase()] = true;
+  if (controls.isLocked) pressedKeys[event.key.toLowerCase()] = true;
 }
 
 function onKeyUp(event) {
-  pressedKeys[event.key.toLowerCase()] = false;
+  if (controls.isLocked) pressedKeys[event.key.toLowerCase()] = false;
 }
 /**
  * Check if player is currently sprinting.
@@ -67,12 +66,12 @@ function updateCollisionBox() {
 
 /**
  *  Animate the controls movement.
- *  @param {Camera} camera 
- *  @param {PointerLockControl} controls 
- *  @param {Array<Box3>} boxes 
+ *  @param {Camera} camera THREE.Camera
+ *  @param {PointerLockControls} controls THREE.PointerLockControls 
+ *  @param {Array<Box3>} boxes Array of THREE.Box3 to check collision
  */
 function animateControls(camera, controls, boxes) {
-  move(pressedKeys, camera, controls);
+  move(pressedKeys, camera, controls, boxes);
 }
 
 /**
@@ -80,8 +79,9 @@ function animateControls(camera, controls, boxes) {
  * @param {Dictionary} pressedKeys Index = pressed key, value = Boolean.
  * @param {Camera} camera THREE.Camera.
  * @param {PointerLockControls} controls THREE.PointerLockControls.
+ *  @param {Array<Box3>} boxes Array of THREE.Box3 to check collision
  */
-function move(pressedKeys, camera, controls) {
+function move(pressedKeys, camera, controls, boxes) {
   for (const[key, value] of Object.entries(movementKeyBinds)) {
     if (key == 'sprint') sprint(camera);
     for (let i = 0; i < value.length; i++) {
