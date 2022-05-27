@@ -137,7 +137,6 @@ function update () {
 }
 
 let mesh;
-let animations;
 var animationMixer;
 
 loader.load(
@@ -148,35 +147,35 @@ loader.load(
 		gltf.scenes; // Array<THREE.Group>
 		gltf.cameras; // Array<THREE.Camera>
 		gltf.asset; // Object
+
+    // console.log('gltf.animations[0].tracks[0]:',gltf.animations[0].tracks[0])
+    // console.log('gltf.animations[0]:',gltf.animations[0])
+    
+    // let animationClips = [new THREE.AnimationClip(
+    //   'CINEMA_4D_Main', 
+    //   -1, 
+    //   [
+    //     gltf.animations[0].tracks[0],
+    //     // gltf.animations[0].tracks[1],
+    //     // gltf.animations[0].tracks[2],
+    //     // gltf.animations[0].tracks[3],
+    //     // gltf.animations[0].tracks[4],
+    //   ]
+    //   )
+    // ]
+    
+    // let animationClips = [new THREE.AnimationClip('CINEMA_4D_Main', -1, gltf.animations[0].tracks)]
+    // console.log('animationClips:',animationClips);
+    // console.log('gltf.animations:',gltf.animations)
+    
+    
     gltf.scene.animations = gltf.animations;
-    animations = gltf.animations;
+    // gltf.scene.animations = animationClips;
     gltf.scene.position.y = -4;
+
     boxes.push(new THREE.Box3().setFromObject(gltf.scene));
 		scene.add( gltf.scene );
-    // console.log('mesh:',mesh)
 
-    // console.log('mesh.position:',mesh.position);
-    // console.log('mesh.rotation:',mesh.rotation);
-    // console.log('mesh.scale:',mesh.scale);
-  
-    // helper = new THREE.Box3Helper( new THREE.Box3().setFromObject(mesh), 0xffff00 );
-    // scene.add(helper);
-
-    // Create an AnimationMixer, and get the list of AnimationClip instances
-    // animationMixer = new THREE.AnimationMixer( mesh );
-
-    // // Update the mixer on each frame
-
-    // // Play a specific animation
-    // var animation = animationMixer.clipAction(animations[0]);
-    // animation.timeScale = 1;
-    // animation.setLoop(THREE.LoopOnce);
-    // animation.clampWhenFinished = true;
-    // animation.enable = true;
-    // animation.reset();
-    // animation.play();
-    animateObject(gltf.scene)
-    
     animate();
 	},
 	function ( xhr ) {
@@ -203,7 +202,7 @@ function raycasting() {
   //   intersects[i].object.material.color.set(0xffffff);
   // }
   scene.remove(scene.getObjectByName("objectHoverHelper"));
-  hoveredObject = undefined;
+  hoveredObject = null;
   for (let i = 0; i < intersects.length; i++) {
     if (intersects[i].object.name == "objectHoverHelper") continue;
     objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
@@ -221,7 +220,7 @@ function animate() {
   if (controls.isLocked) requestAnimationFrame( animate );
   raycasting()
   animateControls(camera, controls, boxes);
-  animationMixer.update(clock.getDelta());
+  if (animationMixer != null) animationMixer.update(clock.getDelta());
   renderer.render( scene, camera );
 }
 
@@ -235,7 +234,7 @@ function traverseUntilLastParent(obj) {
 function animateObject(obj) {
   animationMixer = new THREE.AnimationMixer(obj);
   animationMixer.addEventListener('finished', stopAllAnimation)
-  var animation = animationMixer.clipAction(animations[0]);
+  var animation = animationMixer.clipAction(obj.animations[0]);
   animation.timeScale = 1;
   animation.setLoop(THREE.LoopOnce);
   animation.clampWhenFinished = true;
@@ -254,12 +253,14 @@ function stopAllAnimation() {
     animationMixer.uncacheAction(tempClip, tempRoot);
   }
   animationMixer.uncacheRoot(tempRoot);
+  animationMixer = null;
 }
 
 document.body.addEventListener('click', function(e) {
-  if (!controls.isLocked || hoveredObject == undefined) return;
-  stopAllAnimation();
+  if (!controls.isLocked || hoveredObject == null) return;
+  if (animationMixer != null)stopAllAnimation();
   let lastObj = traverseUntilLastParent(hoveredObject.object);
+  console.log('lastObj:',lastObj);
   if (lastObj.animations.length > 0) animateObject(lastObj);
 })
 
