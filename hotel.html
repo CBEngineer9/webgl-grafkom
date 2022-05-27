@@ -1,17 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <script src="js/three.js"></script>
-    <script src="./node_modules/three/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="./node_modules\three\examples\js\controls\OrbitControls.js"></script>
-    
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<script src="js/three.js"></script>
+	<script src="./node_modules/three/examples/js/loaders/GLTFLoader.js"></script>
+	<!-- <script src="./node_modules\three\examples\js\controls\OrbitControls.js"></script> -->
+	<script src="./node_modules\three\examples\js\controls\PointerLockControls.js"></script>
+	<script src="./js/FPSControls.js"></script>
+	<style>
+		body {
+			margin: 0;
+		}
+
+		#menu {
+			display: none;
+			position: absolute;
+			width: 100vw;
+			height: 100vh;
+			background-color: gray;
+			opacity: 0.7;
+			z-index: 100;
+			justify-content: center;
+			align-items: center;
+			flex-direction: column;
+		}
+
+		#menu>* {
+			background-color: white;
+			opacity: 2;
+		}
+
+		#cursor {
+			width: 100vw;
+			height: 100vh;
+			z-index: 99;
+			position: absolute;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font: bold;
+			color: white;
+			font-size: x-large;
+		}
+	</style>
 </head>
+
 <body>
-    
+	<div id="menu">
+		<h2>Paused...</h2>
+		<h4>Click to resume.</h4>
+	</div>
+	<div id="cursor">
+		+
+	</div>
 </body>
-    <script src="js/hotel.js"></script>
+<script src="js/hotel.js"></script>
+
 </html>

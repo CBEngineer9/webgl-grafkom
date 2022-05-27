@@ -60,6 +60,9 @@
 <script>
 
 const scene = new THREE.Scene();
+scene.background = new THREE.Color( 0x202020 );
+scene.fog = new THREE.Fog( 0xe0e0e0, 20, 100 );
+
 var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 25 );
 camera.position.set(0, 1.8, 8);
 camera.lookAt(0, 1.8, 0);
@@ -67,6 +70,15 @@ camera.lookAt(0, 1.8, 0);
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
+
+const mesh = new THREE.Mesh( new THREE.PlaneGeometry( 2000, 2000 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+mesh.rotation.x = - Math.PI / 2;
+scene.add( mesh );
+
+const grid = new THREE.GridHelper( 200, 40, 0x000000, 0x000000 );
+grid.material.opacity = 0.2;
+grid.material.transparent = true;
+scene.add( grid );
 
 var boxes = [];
 
@@ -136,7 +148,6 @@ function update () {
   mixer.update( deltaSeconds );
 }
 
-let mesh;
 var animationMixer;
 
 loader.load(
@@ -171,7 +182,8 @@ loader.load(
     
     gltf.scene.animations = gltf.animations;
     // gltf.scene.animations = animationClips;
-    gltf.scene.position.y = -4;
+    gltf.scene.position.y = 0;
+    gltf.scene.scale.set(0.3, 0.3, 0.3);
 
     boxes.push(new THREE.Box3().setFromObject(gltf.scene));
 		scene.add( gltf.scene );
