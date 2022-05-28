@@ -11,12 +11,28 @@ function CreateRotationAnimation(period, axis = 'x') {
 
 }
 
-var boxes = [];
+var collisionBoxes = [];
+
+function addCollisionChecking(obj, boxes) {
+  // console.log('obj:',obj); 
+  // console.log('typeof(obj):',typeof(obj));
+  
+  if (obj.children.length == 0) {
+    boxes.push(new THREE.Box3().setFromObject(obj));
+    scene.add(new THREE.Box3Helper( new THREE.Box3().setFromObject(obj), 0xeeeeee ));
+  }
+  else {
+    obj.children.forEach(child => {
+      addCollisionChecking(child, boxes);
+    });
+  }
+}
 
 function loadModels() {
 
   loader.load(
     "./room/room.gltf",
+    // "./coba2/models/table/scene.gltf",
     // model loaded
     function (gltf) {
 
@@ -41,6 +57,8 @@ function loadModels() {
       // action.reset().play()
 
       // boxes.push(new THREE.Box3().setFromObject(gltf.scene));
+      // gltf.scene.scale.set(0.3, 0.3, 0.3);
+      // addCollisionChecking(gltf.scene, collisionBoxes);
       scene.add(gltf.scene);  
 
     },
@@ -107,7 +125,7 @@ const scene = new THREE.Scene();
 
 // camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 1.8, -1);
+// camera.position.set(-6, 1.8, -6);
 // camera.lookAt( 0, 0, 0 );
 
 // renderer
@@ -168,7 +186,7 @@ const loader = new THREE.GLTFLoader();
 
 const mixers = [];
 
-var mixer;
+var animationMixer;
 
 //init raycasting
 var raycaster = new THREE.Raycaster();
@@ -186,7 +204,7 @@ function raycasting() {
   hoveredObject = null;
   for (let i = 0; i < intersects.length; i++) {
     if (intersects[i].object.name == "objectHoverHelper") continue;
-    if (intersects[i].object.name != "hoverable") continue;
+    // if (intersects[i].object.name != "hoverable") continue;
     objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
     objectHoverHelper.name = "objectHoverHelper";
     hoveredObject = intersects[i];
@@ -202,7 +220,8 @@ function animate() {
   if (controls.isLocked) requestAnimationFrame( animate );
   for (const mixer of mixers) mixer.update(delta);
   raycasting();
-  animateControls(camera, controls, boxes);
+  animateControls(camera, controls, collisionBoxes);
+  activateCameraBobbingWhenMoving();
   spotLightHelper.update();
   renderer.render(scene, camera);
 }
@@ -248,6 +267,7 @@ document.body.addEventListener('click', function(e) {
   console.log('lastObj:',lastObj);
   if (lastObj.animations.length > 0) animateObject(lastObj);
 })
+
 // on resize
 window.addEventListener('resize', onWindowResize);
 function onWindowResize() {
