@@ -125,38 +125,105 @@ const scene = new THREE.Scene();
 
 // camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-// camera.position.set(-6, 1.8, -6);
+// camera.position.set( -1, 2, -1 );
 // camera.lookAt( 0, 0, 0 );
 
 // renderer
 const renderer = new THREE.WebGLRenderer();
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap; // default THREE.PCFShadowMap
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// mixers array
+const mixers = [];
+
 // light
-const light = new THREE.PointLight(0xffff55, 10, 100);
-light.position.set(-5, 5, 0);
-// scene.add( light );
-
+const letThereBeLight = new THREE.PointLight( 0xffff55, 10, 100 );
+letThereBeLight.position.set( -5, 5, 0 );
+// scene.add( letThereBeLight );
 const sphereSize = 1;
-const pointLightHelper = new THREE.PointLightHelper(light, sphereSize);
-scene.add(pointLightHelper);
+const pointLightHelper = new THREE.PointLightHelper( letThereBeLight, sphereSize );
+scene.add( pointLightHelper );
 
-const whiteAmbient = new THREE.AmbientLight(0x808080, 5); // white ambient
-scene.add(whiteAmbient);
+const whiteAmbient = new THREE.AmbientLight( 0x808080 , 2); // white ambient
+scene.add( whiteAmbient );
 
 // spotlight 1
-const spotLight = new THREE.SpotLight(0xffffcc);
-spotLight.position.set(-1, 2.0, 1.9);
-spotLight.castShadow = true;
-scene.add(spotLight);
+// const spotLight = new THREE.SpotLight( 0xffffcc );
+// spotLight.position.set( -1, 2.0, 1.9 );
+// spotLight.castShadow = true;
+// scene.add( spotLight );
 
-spotLight.target.position.set(-1, 5, 1.9);
-scene.add(spotLight.target);
+// spotLight.target.position.set(-1, 5, 1.9);
+// scene.add( spotLight.target );
 
-const spotLightHelper = new THREE.SpotLightHelper(spotLight);
-spotLightHelper.update();
-scene.add(spotLightHelper);
+// const spotLightHelper = new THREE.SpotLightHelper( spotLight );
+// spotLightHelper.update();
+// scene.add( spotLightHelper );
+
+// front light
+const frontLight = new THREE.PointLight( 0xffffcc, 2, 50, 2 );
+frontLight.position.set( -1, 2.0, 1.8 );
+frontLight.castShadow = true;
+scene.add( frontLight );
+const frontLightHelper = new THREE.PointLightHelper( frontLight, 0.1 );
+scene.add( frontLightHelper );
+
+console.log('smolLight:',frontLight);
+
+//Set up shadow properties for the light
+frontLight.shadow.mapSize.width = 2048; // default
+frontLight.shadow.mapSize.height = 2048; // default
+frontLight.shadow.camera.near = 0.5; // default
+frontLight.shadow.camera.far = 100; // default
+frontLight.shadow.bias = -0.001;
+
+//Create a helper for the shadow camera (optional)
+const frontLightShadowHelper = new THREE.CameraHelper( frontLight.shadow.camera );
+scene.add( frontLightShadowHelper );
+
+// corridor light
+const corridorLight = new THREE.PointLight( 0xffffcc, 1, 50, 2 );
+corridorLight.position.set( 3.7, 2, -4.5 );
+corridorLight.castShadow = true;
+scene.add( corridorLight );
+const corridorLightHelper = new THREE.PointLightHelper( corridorLight, 0.1 );
+scene.add( corridorLightHelper );
+
+//Set up shadow properties for the light
+corridorLight.shadow.mapSize.width = 2048; // default
+corridorLight.shadow.mapSize.height = 2048; // default
+corridorLight.shadow.camera.near = 0.5; // default
+corridorLight.shadow.camera.far = 100; // default
+corridorLight.shadow.bias = -0.001;
+
+//Create a helper for the shadow camera (optional)
+const corridorLightShadowHelper = new THREE.CameraHelper( frontLight.shadow.camera );
+scene.add( corridorLightShadowHelper );
+
+// light flicker
+// const timesArr = [0, 2.5, 3, 4.1, 4.3, 4.5, 5];
+// const valuesArr = [0, 0.2, 0, 0.1, 0, 0.5, 0];
+// const flickerKFrame = new THREE.NumberKeyframeTrack('.intensity',timesArr,valuesArr, THREE.InterpolateDiscrete);
+// const flickerClip = new THREE.AnimationClip(null,5,[flickerKFrame]);
+// const corridorFlickerMixer = new THREE.AnimationMixer(corridorLight);
+// const action = corridorFlickerMixer.clipAction(flickerClip);
+// action.setLoop(THREE.LoopRepeat, Infinity)
+// action.play();
+// console.log('flickerClip:',flickerClip);
+// console.log('action:',action);
+// mixers.push(corridorFlickerMixer);
+
+function corridorFlicker() {
+    if (Math.random() < 0.8) {
+        corridorLight.intensity = 0;
+    } else 
+        corridorLight.intensity = Math.random()
+
+    setTimeout(corridorFlicker, Math.random() * 5000);
+}
+corridorFlicker()
 
 // clock
 const clock = new THREE.Clock();
@@ -181,10 +248,24 @@ controls.addEventListener( 'unlock', function() {
 	menu.style.display = 'flex';
 });
 
+// camera path
+const path = new THREE.Path();
+
+path.lineTo( 0, 0.8 );
+path.quadraticCurveTo( 0, 1, 0.2, 1 );
+path.lineTo( 1, 1 );
+
+function showPathHelper(path) {
+    const points = path.getPoints();
+    const geometry = new THREE.BufferGeometry().setFromPoints( points );
+    const material = new THREE.LineBasicMaterial( { color: 0xffffff } );
+    const line = new THREE.Line( geometry, material );
+    scene.add( line );
+}
+showPathHelper(path);
+
 // loader
 const loader = new THREE.GLTFLoader();
-
-const mixers = [];
 
 var animationMixer;
 
@@ -218,11 +299,11 @@ loadModels()
 
 function animate() {
   if (controls.isLocked) requestAnimationFrame( animate );
-  for (const mixer of mixers) mixer.update(delta);
+  for ( const mixer of mixers ) mixer.update( clock.getDelta() );
   raycasting();
   animateControls(camera, controls, collisionBoxes);
   activateCameraBobbingWhenMoving();
-  spotLightHelper.update();
+//   spotLightHelper.update();
   renderer.render(scene, camera);
 }
 initFPSControls(document.body, camera);
