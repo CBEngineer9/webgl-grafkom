@@ -42,7 +42,7 @@ function loadModels() {
       gltf.cameras; // Array<THREE.Camera>
       gltf.asset; // Object
 
-      console.log(gltf.scene);
+      // console.log(gltf.scene);
 
       // const doorlight = new THREE.PointLight( 0xffff55, 10, 100 );
       // doorlight.position.set( -5, 5, -10 );
@@ -73,46 +73,51 @@ function loadModels() {
     }
   );
 
-  // loader.load(
-  //     "./doorAlone/door.gltf",
-  //     // model loaded
-  //     function(gltf){
+  loader.load(
+      "./doorAlone/door.gltf",
+      // model loaded
+      function(gltf){
 
-  //         gltf.animations; // Array<THREE.AnimationClip>
-  //         object = gltf.scene; // THREE.Group
-  //         gltf.scenes; // Array<THREE.Group>
-  //         gltf.cameras; // Array<THREE.Camera>
-  //         gltf.asset; // Object
+          gltf.animations; // Array<THREE.AnimationClip>
+          object = gltf.scene; // THREE.Group
+          gltf.scenes; // Array<THREE.Group>
+          gltf.cameras; // Array<THREE.Camera>
+          gltf.asset; // Object
 
-  //         console.log(gltf.scene);
+          console.log(gltf.scene);
 
-  //         // const doorlight = new THREE.PointLight( 0xffff55, 10, 100 );
-  //         // doorlight.position.set( -5, 5, -10 );
-  //         // scene.add( doorlight );
-  //         // const sphereSize = 1;
-  //         // const pointLightHelper = new THREE.PointLightHelper( doorlight, sphereSize );
-  //         // scene.add( pointLightHelper );
+          object.position.z = -9.11
+          object.position.y = 0.05
 
-  //         const clips = gltf.animations;
-  //         const mixerDoor = new THREE.AnimationMixer(gltf.scene)
-  //         const action = mixerDoor.clipAction(clips[0])
-  //         action.reset().play()
+          object.rotation.y = Math.PI;
 
-  //         scene.add(gltf.scene);
-  //         mixers.push(mixerDoor)
+          // const doorlight = new THREE.PointLight( 0xffff55, 10, 100 );
+          // doorlight.position.set( -5, 5, -10 );
+          // scene.add( doorlight );
+          // const sphereSize = 1;
+          // const pointLightHelper = new THREE.PointLightHelper( doorlight, sphereSize );
+          // scene.add( pointLightHelper );
 
-  //         animate();
-  //     },
+          const clips = gltf.animations;
+          const mixerDoor = new THREE.AnimationMixer(gltf.scene)
+          const action = mixerDoor.clipAction(clips[0])
+          // action.reset().play()
 
-  //     // model loading
-  //     function(xhr){
-  //         console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-  //     },
-  //     // called when loading has errors
-  //     function ( error ) {
-  //         console.log( 'An error happened' );
-  //     }
-  // );
+          scene.add(gltf.scene);
+          mixers.push(mixerDoor)
+
+          animate();
+      },
+
+      // model loading
+      function(xhr){
+          console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+      },
+      // called when loading has errors
+      function ( error ) {
+          console.log( 'An error happened' );
+      }
+  );
 }
 
 // on resize
@@ -170,8 +175,6 @@ scene.add( frontLight );
 const frontLightHelper = new THREE.PointLightHelper( frontLight, 0.1 );
 scene.add( frontLightHelper );
 
-console.log('smolLight:',frontLight);
-
 //Set up shadow properties for the light
 frontLight.shadow.mapSize.width = 2048; // default
 frontLight.shadow.mapSize.height = 2048; // default
@@ -180,8 +183,8 @@ frontLight.shadow.camera.far = 100; // default
 frontLight.shadow.bias = -0.001;
 
 //Create a helper for the shadow camera (optional)
-const frontLightShadowHelper = new THREE.CameraHelper( frontLight.shadow.camera );
-scene.add( frontLightShadowHelper );
+// const frontLightShadowHelper = new THREE.CameraHelper( frontLight.shadow.camera );
+// scene.add( frontLightShadowHelper );
 
 // corridor light
 const corridorLight = new THREE.PointLight( 0xffffcc, 1, 50, 2 );
@@ -199,8 +202,8 @@ corridorLight.shadow.camera.far = 100; // default
 corridorLight.shadow.bias = -0.001;
 
 //Create a helper for the shadow camera (optional)
-const corridorLightShadowHelper = new THREE.CameraHelper( frontLight.shadow.camera );
-scene.add( corridorLightShadowHelper );
+// const corridorLightShadowHelper = new THREE.CameraHelper( corridorLight.shadow.camera );
+// scene.add( corridorLightShadowHelper );
 
 // light flicker
 // const timesArr = [0, 2.5, 3, 4.1, 4.3, 4.5, 5];
@@ -229,6 +232,7 @@ corridorFlicker()
 const clock = new THREE.Clock();
 
 // control
+var cinematicMode = false;
 // const controls = new THREE.OrbitControls(camera, renderer.domElement);
 var controls = new THREE.PointerLockControls(camera, document.body);
 // controls.maxPolarAngle = Math.PI * 5 / 6;
@@ -249,20 +253,48 @@ controls.addEventListener( 'unlock', function() {
 });
 
 // camera path
-const path = new THREE.Path();
+// const vec = new THREE.Vector2(-2,1.8)
+// const path = new THREE.Path([vec]);
 
-path.lineTo( 0, 0.8 );
-path.quadraticCurveTo( 0, 1, 0.2, 1 );
-path.lineTo( 1, 1 );
+// path.lineTo( 0, 1.8 );
+// path.quadraticCurveTo( 0, 1, 0.2, 1 );
+// path.lineTo( 1, 1 );
+
+const path = new THREE.CurvePath();
+path.add(new THREE.LineCurve3(new THREE.Vector3(-3,1.8,0), new THREE.Vector3(-1,1.8,0)))
+path.add(new THREE.CubicBezierCurve3(new THREE.Vector3(-1,1.8,0), new THREE.Vector3(0,1.8,0), new THREE.Vector3(4,1.8,2.7), new THREE.Vector3(3.2,1.8,-1.3)))
+path.add(new THREE.CatmullRomCurve3([new THREE.Vector3(3.2,1.8,-1.3), new THREE.Vector3(2.5,1,-6.2), new THREE.Vector3(3,1.8,-8), new THREE.Vector3(1.4,1.8,-8.7)]))
 
 function showPathHelper(path) {
-    const points = path.getPoints();
-    const geometry = new THREE.BufferGeometry().setFromPoints( points );
-    const material = new THREE.LineBasicMaterial( { color: 0xffffff } );
-    const line = new THREE.Line( geometry, material );
-    scene.add( line );
+  const points = path.getPoints();
+  const geometry = new THREE.BufferGeometry().setFromPoints( points );
+  const material = new THREE.LineBasicMaterial( { color: 0xffffff } );
+  const line = new THREE.Line( geometry, material );
+  scene.add( line );
 }
 showPathHelper(path);
+
+function cinematicMove(path) {
+  const points = path.getPoints();
+  const timesArr = [];
+  const valuesArr = [];
+  for (let i = 0; i < points.length; i++) {
+    const element = points[i];
+    timesArr.push(i);
+    
+    valuesArr.push(element.x);
+    valuesArr.push(element.y);
+    valuesArr.push(element.z);
+  }
+  
+  const cn_posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateLinear);
+  const cinematicClip = new THREE.AnimationClip(null,timesArr[timesArr.length-1],[cn_posKFrame]);
+  const cinemaMixer = new THREE.AnimationMixer(camera);
+  const action = cinemaMixer.clipAction(cinematicClip);
+  mixers.push(cinemaMixer);
+  action.play();
+}
+// cinematicMove(path)
 
 // loader
 const loader = new THREE.GLTFLoader();
@@ -304,10 +336,16 @@ function animate() {
   animateControls(camera, controls, collisionBoxes);
   activateCameraBobbingWhenMoving();
 //   spotLightHelper.update();
+  updateDebugScreen()
   renderer.render(scene, camera);
 }
 initFPSControls(document.body, camera);
 animate();
+
+
+
+// Function land /////////////////////////////////////////////////////////////
+
 
 function traverseUntilLastParent(obj) {
   if (obj.parent == scene) return obj;
@@ -355,4 +393,10 @@ function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function updateDebugScreen() {
+  document.getElementById('pos_x').innerText = "x=" + camera.position.x
+  document.getElementById('pos_y').innerText = "y=" + camera.position.y
+  document.getElementById('pos_z').innerText = "z=" + camera.position.z
 }

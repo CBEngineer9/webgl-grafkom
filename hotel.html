@@ -8,12 +8,27 @@
 	<title>Document</title>
 	<script src="js/three.js"></script>
 	<script src="./node_modules/three/examples/js/loaders/GLTFLoader.js"></script>
-	<!-- <script src="./node_modules\three\examples\js\controls\OrbitControls.js"></script> -->
+	<script src="./node_modules\three\examples\js\controls\OrbitControls.js"></script>
 	<script src="./node_modules\three\examples\js\controls\PointerLockControls.js"></script>
 	<script src="./js/FPSControls.js"></script>
 	<style>
 		body {
 			margin: 0;
+		}
+
+		#pos{
+			display: block;
+			position: absolute;
+			z-index: 99;
+			top: 0px;
+			left: 0;
+			width: 200px;
+			height: 100px;
+			padding-left: 10px;
+			padding-bottom: 10px;
+			color: white;
+			background-color: black;
+			opacity: 0.7;
 		}
 
 		#menu {
@@ -50,6 +65,11 @@
 </head>
 
 <body>
+	<div id="pos">
+		<p id="pos_x">x=</p>
+		<p id="pos_y">y=</p>
+		<p id="pos_z">z=</p>
+	</div>
 	<div id="menu">
 		<h2>Paused...</h2>
 		<h4>Click to resume.</h4>
