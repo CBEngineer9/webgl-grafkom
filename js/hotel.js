@@ -31,7 +31,7 @@ function addCollisionChecking(obj, boxes) {
 function loadModels() {
 
   loader.load(
-    "./room/room.gltf",
+    "./room/frontRoom.gltf",
     // "./coba2/models/table/scene.gltf",
     // model loaded
     function (gltf) {
@@ -101,7 +101,7 @@ function loadModels() {
           const clips = gltf.animations;
           const mixerDoor = new THREE.AnimationMixer(gltf.scene)
           const action = mixerDoor.clipAction(clips[0])
-          // action.reset().play()
+          action.reset().play()
 
           scene.add(gltf.scene);
           mixers.push(mixerDoor)
@@ -272,7 +272,7 @@ function showPathHelper(path) {
   const line = new THREE.Line( geometry, material );
   scene.add( line );
 }
-showPathHelper(path);
+// showPathHelper(path);
 
 function cinematicMove(path) {
   const points = path.getPoints();
