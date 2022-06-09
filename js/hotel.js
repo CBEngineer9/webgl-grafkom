@@ -13,17 +13,31 @@ function CreateRotationAnimation(period, axis = 'x') {
 
 var collisionBoxes = [];
 
-function addCollisionChecking(obj, boxes) {
-  // console.log('obj:',obj); 
-  // console.log('typeof(obj):',typeof(obj));
-  
-  if (obj.children.length == 0) {
+// collision checking
+function addCollisionChecking(obj, boxes, isSimple) {
+  if (!isSimple) {
+    if (obj.children.length == 0) {
+      boxes.push(new THREE.Box3().setFromObject(obj));
+      scene.add(new THREE.Box3Helper( new THREE.Box3().setFromObject(obj), 0xeeeeee ));
+    }
+    else {
+      obj.children.forEach(child => {
+        addCollisionChecking(child, boxes);
+      });
+    }
+  }
+  else {
     boxes.push(new THREE.Box3().setFromObject(obj));
     scene.add(new THREE.Box3Helper( new THREE.Box3().setFromObject(obj), 0xeeeeee ));
   }
-  else {
+}
+
+// traverse through children and give name
+function traverseThroughChildrenAndGiveName(obj, name) {
+  obj.name = name;
+  if (obj.children.length != 0) {
     obj.children.forEach(child => {
-      addCollisionChecking(child, boxes);
+      traverseThroughChildrenAndGiveName(child, name)
     });
   }
 }
@@ -106,7 +120,6 @@ function loadModels() {
           scene.add(gltf.scene);
           mixers.push(mixerDoor)
 
-          animate();
       },
 
       // model loading
@@ -117,6 +130,36 @@ function loadModels() {
       function ( error ) {
           console.log( 'An error happened' );
       }
+  );
+  
+  loader.load(
+    './coba2/models/table/scene.gltf',
+    function (gltf) {
+      gltf.animations; // Array<THREE.AnimationClip>
+      gltf.scene; // THREE.Group
+      gltf.scenes; // Array<THREE.Group>
+      gltf.cameras; // Array<THREE.Camera>
+      gltf.asset; // Object
+
+      traverseThroughChildrenAndGiveName(gltf.scene, "hoverable");
+      
+      gltf.scene.rotation.y = Math.PI / 2;
+      gltf.scene.animations = gltf.animations;
+      gltf.scene.position.set(-0.65, 0, -0.65);
+      gltf.scene.scale.set(0.25, 0.25, 0.25);
+      // gltf.scene.name = "hoverable";
+      console.log('gltf.scene:',gltf.scene);
+
+      addCollisionChecking(gltf.scene, collisionBoxes, true);
+      scene.add( gltf.scene );
+      animate();
+    },
+    function ( xhr ) {
+      console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+    },
+    function ( error ) {
+      console.log( 'An error happened' );
+    }
   );
 }
 
@@ -130,8 +173,8 @@ const scene = new THREE.Scene();
 
 // camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-// camera.position.set( -1, 2, -1 );
-// camera.lookAt( 0, 0, 0 );
+camera.position.set( -3, 2, 0 );
+camera.lookAt( 0, 1.8, 0 );
 
 // renderer
 const renderer = new THREE.WebGLRenderer();
@@ -317,7 +360,9 @@ function raycasting() {
   hoveredObject = null;
   for (let i = 0; i < intersects.length; i++) {
     if (intersects[i].object.name == "objectHoverHelper") continue;
-    // if (intersects[i].object.name != "hoverable") continue;
+    if (
+      intersects[i].object.name != "hoverable"
+    ) continue;
     objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
     objectHoverHelper.name = "objectHoverHelper";
     hoveredObject = intersects[i];
@@ -327,7 +372,16 @@ function raycasting() {
 }
 
 // Load obj
-loadModels()
+loadModels();
+
+// Load wall for collision checking
+// let wall = new THREE.Mesh( new THREE.BoxGeometry(10, 5, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+// wall.position.set(0, 1, 2);
+// scene.add(wall);
+
+// wall = new THREE.Mesh( new THREE.BoxGeometry(6, 5, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+// wall.position.set(-1, 1, -1.85);
+// scene.add(wall);
 
 function animate() {
   if (controls.isLocked) requestAnimationFrame( animate );
@@ -396,7 +450,7 @@ function onWindowResize() {
 }
 
 function updateDebugScreen() {
-  document.getElementById('pos_x').innerText = "x=" + camera.position.x
-  document.getElementById('pos_y').innerText = "y=" + camera.position.y
-  document.getElementById('pos_z').innerText = "z=" + camera.position.z
+  document.getElementById('pos_x').innerText = "x=" + camera.position.x;
+  document.getElementById('pos_y').innerText = "y=" + camera.position.y;
+  document.getElementById('pos_z').innerText = "z=" + camera.position.z;
 }
