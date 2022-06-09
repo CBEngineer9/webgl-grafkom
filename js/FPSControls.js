@@ -20,14 +20,23 @@ var movementKeyBinds = {
 var pressedKeys = {};
 
 var FPSCollisionBox = new THREE.Box3();
+var FPSCollisionBoxHelper;
 
-function initFPSControls(domElement, camera) {
+function initFPSControls(domElement, scene, camera) {
   domElement.onkeydown = onKeyDown;
   domElement.onkeyup = onKeyUp;
   camera.position.y = personHeight;
   initialFOV = camera.fov;
   sprintFOV = camera.fov + 10;
-  FPSCollisionBox.setFromCenterAndSize( new THREE.Vector3(camera.position.x, camera.position.y - 0.9, camera.position.z), new THREE.Vector3( 1, 2, 1 ) );
+  updateCollisionBox();
+  FPSCollisionBoxHelper = new THREE.Box3Helper( FPSCollisionBox );
+  scene.add(FPSCollisionBoxHelper);
+  //comment this to disable collision helper
+  // toggleFPSCollisionBoxHelper();
+}
+
+function toggleFPSCollisionBoxHelper() {
+  FPSCollisionBoxHelper.visible = !FPSCollisionBoxHelper.visible;
 }
 
 function onKeyDown(event) {
@@ -78,7 +87,7 @@ function sprint(camera) {
  * Update the collision box of the camera.
  */
 function updateCollisionBox() {
-  FPSCollisionBox.setFromCenterAndSize( new THREE.Vector3(camera.position.x, camera.position.y - 0.9, camera.position.z), new THREE.Vector3( 1, 2, 1 ) );
+  FPSCollisionBox.setFromCenterAndSize( new THREE.Vector3(camera.position.x, camera.position.y - 0.9, camera.position.z), new THREE.Vector3( 0.7, 2, 0.7) );
 }
 
 /**

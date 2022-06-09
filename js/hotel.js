@@ -393,7 +393,7 @@ function animate() {
   updateDebugScreen()
   renderer.render(scene, camera);
 }
-initFPSControls(document.body, camera);
+initFPSControls(document.body, scene, camera);
 animate();
 
 
