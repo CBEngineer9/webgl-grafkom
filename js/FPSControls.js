@@ -2,6 +2,7 @@ var movementAmount = 0.02;
 var sprintMovementAmount = 0.03;
 var deltaMovement = movementAmount;
 var initialFOV = 75;
+var deltaFOV = 1;
 var sprintFOV = 80;
 var personHeight = 1.8;
 var vAngle = 0;
@@ -64,12 +65,12 @@ function isMoving() {
 function sprint(camera) {
   if (!isSprinting()) {
     deltaMovement = movementAmount;
-    if (camera.fov > initialFOV) camera.fov -= 0.5;
+    if (camera.fov > initialFOV) camera.fov -= deltaFOV;
     camera.updateProjectionMatrix();
   }
   else if (isSprinting()){
     deltaMovement = sprintMovementAmount;
-    if (camera.fov < sprintFOV) camera.fov += 0.5;
+    if (camera.fov < sprintFOV) camera.fov += deltaFOV;
     camera.updateProjectionMatrix();
   }  
 }
@@ -125,12 +126,12 @@ function move(pressedKeys, camera, controls, boxes) {
 }
 
 function activateCameraBobbingWhenMoving() {
+  let deltaNaikTurun = 1;
   if (isMoving()) {
-    vAngle += deltaMovement * 3/5;
+    vAngle += deltaMovement * deltaNaikTurun;
     let temp = (Math.pow(Math.sin(vAngle), 2) - 1) * 1/8
     camera.position.y = temp + personHeight;
-    console.log('temp:',temp);
-    console.log('camera.position.y :',camera.position.y )
-    
+    // console.log('temp:',temp);
+    // console.log('camera.position.y :',camera.position.y )
   }
 }
