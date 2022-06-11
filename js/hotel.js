@@ -14,11 +14,24 @@ function CreateRotationAnimation(period, axis = 'x') {
 var collisionBoxes = [];
 
 // collision checking
-function addCollisionChecking(obj, boxes, isSimple) {
+function addCollisionChecking(obj, boxes, isSimple = false) {
   if (!isSimple) {
-    if (obj.children.length == 0) {
-      boxes.push(new THREE.Box3().setFromObject(obj));
-      scene.add(new THREE.Box3Helper( new THREE.Box3().setFromObject(obj), 0xeeeeee ));
+
+    const hleper = new THREE.BoxHelper(obj, 0xeeeeee )
+    console.log('hleper:',hleper);
+    scene.add(hleper);
+
+    if (obj.children.length == 0 && obj.isMesh) {
+      // const material = new THREE.MeshBasicMaterial( { color: 0x000000 } );
+      // const colObj = new THREE.Mesh(obj.geometry, material)
+      // obj.add(colObj)
+
+      obj.geometry.computeBoundingBox()
+      obj.geometry.computeBoundingSphere()
+
+      // const box = new THREE.Box3().setFromObject(obj)
+      // boxes.push(box);
+
     }
     else {
       obj.children.forEach(child => {
@@ -70,9 +83,13 @@ function loadModels() {
       // const action = mixer.clipAction(clips[0])
       // action.reset().play()
 
+      // const bb = new THREE.BoxHelper( object, 0xeeeeee );
+      // scene.add(bb)
+
       // boxes.push(new THREE.Box3().setFromObject(gltf.scene));
       // gltf.scene.scale.set(0.3, 0.3, 0.3);
-      // addCollisionChecking(gltf.scene, collisionBoxes);
+      console.log(dumpObject(object))
+      addCollisionChecking(gltf.scene, collisionBoxes);
       scene.add(gltf.scene);  
 
     },
@@ -296,13 +313,6 @@ controls.addEventListener( 'unlock', function() {
 });
 
 // camera path
-// const vec = new THREE.Vector2(-2,1.8)
-// const path = new THREE.Path([vec]);
-
-// path.lineTo( 0, 1.8 );
-// path.quadraticCurveTo( 0, 1, 0.2, 1 );
-// path.lineTo( 1, 1 );
-
 const path = new THREE.CurvePath();
 path.add(new THREE.LineCurve3(new THREE.Vector3(-3,1.8,0), new THREE.Vector3(-1,1.8,0)))
 path.add(new THREE.CubicBezierCurve3(new THREE.Vector3(-1,1.8,0), new THREE.Vector3(0,1.8,0), new THREE.Vector3(4,1.8,2.7), new THREE.Vector3(3.2,1.8,-1.3)))
@@ -366,6 +376,7 @@ function raycasting() {
     objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
     objectHoverHelper.name = "objectHoverHelper";
     hoveredObject = intersects[i];
+    console.log('hoveredObject:',hoveredObject);
     scene.add(objectHoverHelper);
     break;
   }
@@ -453,4 +464,16 @@ function updateDebugScreen() {
   document.getElementById('pos_x').innerText = "x=" + camera.position.x;
   document.getElementById('pos_y').innerText = "y=" + camera.position.y;
   document.getElementById('pos_z').innerText = "z=" + camera.position.z;
+}
+
+function dumpObject(obj, lines = [], isLast = true, prefix = '') {
+  const localPrefix = isLast ? '└─' : '├─';
+  lines.push(`${prefix}${prefix ? localPrefix : ''}${obj.name || '*no-name*'} [${obj.type}]`);
+  const newPrefix = prefix + (isLast ? '  ' : '│ ');
+  const lastNdx = obj.children.length - 1;
+  obj.children.forEach((child, ndx) => {
+      const isLast = ndx === lastNdx;
+      dumpObject(child, lines, isLast, newPrefix);
+  });
+  return lines;
 }
