@@ -55,6 +55,8 @@ function traverseThroughChildrenAndGiveName(obj, name) {
   }
 }
 
+const doorAction = []
+
 function loadModels() {
 
   loader.load(
@@ -88,10 +90,9 @@ function loadModels() {
 
       // boxes.push(new THREE.Box3().setFromObject(gltf.scene));
       // gltf.scene.scale.set(0.3, 0.3, 0.3);
-      console.log(dumpObject(object))
-      addCollisionChecking(gltf.scene, collisionBoxes);
+      
+      // addCollisionChecking(gltf.scene, collisionBoxes);
       scene.add(gltf.scene);  
-
     },
 
     // model loading
@@ -129,10 +130,25 @@ function loadModels() {
           // const pointLightHelper = new THREE.PointLightHelper( doorlight, sphereSize );
           // scene.add( pointLightHelper );
 
+          // const door = gltf.scene.getObjectByName('hoverable')
+          
+          // door.raycast = function(raycaster,intersects){
+          //   console.log(intersects);
+          //   intersects.forEach(itx => {
+          //     // console.log(itx.object);
+          //     if (itx.object.uuid == door.uuid) {
+          //       console.log('ha');
+          //     }
+          //   });
+          // }
+
+          // TODO : make separate function
           const clips = gltf.animations;
           const mixerDoor = new THREE.AnimationMixer(gltf.scene)
           const action = mixerDoor.clipAction(clips[0])
-          action.reset().play()
+          action.setLoop(THREE.LoopPingPong,2)
+          doorAction.push(action)
+          // action.reset().play()
 
           scene.add(gltf.scene);
           mixers.push(mixerDoor)
@@ -206,7 +222,7 @@ const mixers = [];
 // light
 const letThereBeLight = new THREE.PointLight( 0xffff55, 10, 100 );
 letThereBeLight.position.set( -5, 5, 0 );
-// scene.add( letThereBeLight );
+scene.add( letThereBeLight );
 const sphereSize = 1;
 const pointLightHelper = new THREE.PointLightHelper( letThereBeLight, sphereSize );
 scene.add( pointLightHelper );
@@ -371,7 +387,7 @@ function raycasting() {
   for (let i = 0; i < intersects.length; i++) {
     if (intersects[i].object.name == "objectHoverHelper") continue;
     if (
-      intersects[i].object.name != "hoverable"
+      !intersects[i].object.name.startsWith("hoverable")
     ) continue;
     objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
     objectHoverHelper.name = "objectHoverHelper";
@@ -396,7 +412,8 @@ loadModels();
 
 function animate() {
   if (controls.isLocked) requestAnimationFrame( animate );
-  for ( const mixer of mixers ) mixer.update( clock.getDelta() );
+  const delta = clock.getDelta();
+  for ( const mixer of mixers ) mixer.update( delta );
   raycasting();
   animateControls(camera, controls, collisionBoxes);
   activateCameraBobbingWhenMoving();
@@ -408,9 +425,59 @@ initFPSControls(document.body, scene, camera);
 animate();
 
 
-
 // Function land /////////////////////////////////////////////////////////////
 
+function peepKeyhole(time) {
+  const campos = camera.position;
+  const apexpos = new THREE.Vector3(3, 0.95, -6.26);
+  const keypos = new THREE.Vector3(2.38, 0.95, -6.26);
+
+  // const points = path.getPoints();
+  const timesArr = [0, 2, 4, 6];
+  const valuesArr = [];
+
+  // for (let i = 0; i < points.length; i++) {
+  //   const element = points[i];
+  //   timesArr.push(i);
+    
+  //   valuesArr.push(element.x);
+  //   valuesArr.push(element.y);
+  //   valuesArr.push(element.z);
+  // }
+  campos.toArray(valuesArr,valuesArr.length)
+  apexpos.toArray(valuesArr,valuesArr.length)
+  keypos.toArray(valuesArr,valuesArr.length)
+  keypos.toArray(valuesArr,valuesArr.length) // to hold
+  
+  const kh_posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateLinear);
+  const keyholeClip = new THREE.AnimationClip(null,timesArr[timesArr.length-1],[kh_posKFrame]);
+  const keyholeMixer = new THREE.AnimationMixer(camera);
+  const action = keyholeMixer.clipAction(keyholeClip);
+  console.log('action:',action);
+  mixers.push(keyholeMixer);
+  action.setLoop(THREE.LoopOnce)
+
+  if (time == 2) {
+    // red
+    const geometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
+    const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+    const mesh = new THREE.Mesh( geometry, material );
+    mesh.position.x = 2.111
+    mesh.position.y = 1
+    mesh.position.z = -6.25
+    mesh.name = 'red'
+    scene.add( mesh );
+  }
+
+  keyholeMixer.addEventListener( 'finished', function( e ) { 
+    if (time == 2){
+      scene.remove(scene.getObjectByName('red'));
+    }
+  } ); // properties of e: type, action and direction
+
+  action.reset().play();
+  console.log('playing');
+}
 
 function traverseUntilLastParent(obj) {
   if (obj.parent == scene) return obj;
@@ -448,7 +515,12 @@ document.body.addEventListener('click', function(e) {
   if (!controls.isLocked || hoveredObject == null) return;
   if (animationMixer != null)stopAllAnimation();
   let lastObj = traverseUntilLastParent(hoveredObject.object);
-  console.log('lastObj:',lastObj);
+  if (lastObj.name == 'hoverable_doorBody') {
+    doorAction[0].reset().play(); 
+  } else {
+    console.log('lastObj:',lastObj);
+    peepKeyhole(2);
+  }
   if (lastObj.animations.length > 0) animateObject(lastObj);
 })
 

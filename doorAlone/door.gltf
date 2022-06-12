@@ -15,7 +15,7 @@
     "nodes" : [
         {
             "mesh" : 0,
-            "name" : "DoorBody",
+            "name" : "hoverable_doorBody",
             "rotation" : [
                 0,
                 0,
