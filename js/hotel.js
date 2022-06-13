@@ -205,7 +205,7 @@ window.addEventListener('resize', onWindowResize);
 const scene = new THREE.Scene();
 
 // camera
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
 camera.position.set( -3, 2, 0 );
 camera.lookAt( 0, 1.8, 0 );
 
@@ -222,7 +222,7 @@ const mixers = [];
 // light
 const letThereBeLight = new THREE.PointLight( 0xffff55, 10, 100 );
 letThereBeLight.position.set( -5, 5, 0 );
-scene.add( letThereBeLight );
+// scene.add( letThereBeLight );
 const sphereSize = 1;
 const pointLightHelper = new THREE.PointLightHelper( letThereBeLight, sphereSize );
 scene.add( pointLightHelper );
@@ -429,8 +429,8 @@ animate();
 
 function peepKeyhole(time) {
   const campos = camera.position;
-  const apexpos = new THREE.Vector3(3, 0.95, -6.26);
-  const keypos = new THREE.Vector3(2.38, 0.95, -6.26);
+  const apexpos = new THREE.Vector3(3, 0.975, -6.27);
+  const keypos = new THREE.Vector3(2.24, 0.975, -6.27);
 
   // const points = path.getPoints();
   const timesArr = [0, 2, 4, 6];
@@ -462,7 +462,7 @@ function peepKeyhole(time) {
     const geometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
     const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
     const mesh = new THREE.Mesh( geometry, material );
-    mesh.position.x = 2.111
+    mesh.position.x = 2.11065
     mesh.position.y = 1
     mesh.position.z = -6.25
     mesh.name = 'red'
@@ -481,6 +481,13 @@ function peepKeyhole(time) {
 
 function traverseUntilLastParent(obj) {
   if (obj.parent == scene) return obj;
+  else {
+    return traverseUntilLastParent(obj.parent);
+  }
+}
+
+function traverseUntilHoverable(obj) {
+  if (obj.parent == scene || obj.name.startsWith('hoverable')) return obj;
   else {
     return traverseUntilLastParent(obj.parent);
   }
@@ -514,7 +521,7 @@ function stopAllAnimation() {
 document.body.addEventListener('click', function(e) {
   if (!controls.isLocked || hoveredObject == null) return;
   if (animationMixer != null)stopAllAnimation();
-  let lastObj = traverseUntilLastParent(hoveredObject.object);
+  let lastObj = traverseUntilHoverable(hoveredObject.object);
   if (lastObj.name == 'hoverable_doorBody') {
     doorAction[0].reset().play(); 
   } else {
