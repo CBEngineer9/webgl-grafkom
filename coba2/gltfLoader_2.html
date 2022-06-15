@@ -87,7 +87,7 @@
             let action = mixer.clipAction(clips[1])
             action.timeScale = -1;
             action.setLoop(THREE.LoopOnce);
-            action.clampWhenFinished = true;
+            // action.clampWhenFinished = true;
             action.reset();
             // action.time = action.getClip().duration;
             // action.paused = true;
@@ -106,7 +106,7 @@
             action.reset();
             action.timeScale = -1;
             action.setLoop(THREE.LoopOnce);
-            action.clampWhenFinished = true;
+            // action.clampWhenFinished = true;
             reloadActions.push(action);
 
             action = mixer.clipAction(clips[1].clone())
@@ -116,7 +116,7 @@
             action.setLoop(THREE.LoopOnce);
             // action.crossFadeFrom(reloadActions[0],1000,true);
             action.clampWhenFinished = true;
-            // action.setLoop(THREE.LoopPingPong, 2);
+            action.setLoop(THREE.LoopPingPong, 2);
             reloadActions.push(action);
 
 
@@ -135,7 +135,7 @@
                 if (reloadActionsState < reloadActions.length){
                     // animationAction1.setLoop( THREE.LoopRepeat ,4 );
                     let action = reloadActions[reloadActionsState];
-                    // reloadActions[reloadActionsState-1].fadeOut(10);
+                    reloadActions[reloadActionsState-1].stop();
                     if (action.timeScale < 0){
                         action.time = action.getClip().duration;
                     } else {

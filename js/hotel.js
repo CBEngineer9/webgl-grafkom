@@ -71,14 +71,17 @@ function loadModels() {
       gltf.cameras; // Array<THREE.Camera>
       gltf.asset; // Object
 
-      // console.log(gltf.scene);
+      gltf.scene.castShadow = true;
+      gltf.scene.receiveShadow = true;
+      
+      gltf.scene.traverse( function ( child ) {
+        if ( child.isObject3D ) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      } );
 
-      // const doorlight = new THREE.PointLight( 0xffff55, 10, 100 );
-      // doorlight.position.set( -5, 5, -10 );
-      // scene.add( doorlight );
-      // const sphereSize = 1;
-      // const pointLightHelper = new THREE.PointLightHelper( doorlight, sphereSize );
-      // scene.add( pointLightHelper );
+      console.log(gltf.scene);
 
       // const clips = gltf.animations;
       // mixer = new THREE.AnimationMixer(gltf.scene)
@@ -146,13 +149,34 @@ function loadModels() {
           const clips = gltf.animations;
           const mixerDoor = new THREE.AnimationMixer(gltf.scene)
           const action = mixerDoor.clipAction(clips[0])
-          action.setLoop(THREE.LoopPingPong,2)
+          action.setLoop(THREE.LoopOnce)
+          action.clampWhenFinished = true;
           doorAction.push(action)
+          mixers.push(mixerDoor)
           // action.reset().play()
 
-          scene.add(gltf.scene);
-          mixers.push(mixerDoor)
+          const action_close = mixerDoor.clipAction(clips[0].clone())
+          action_close.setLoop(THREE.LoopOnce)
+          action_close.timeScale = -1;
+          action.time = clips[0].duration;
+          doorAction.push(action_close)
 
+          // const timesArr = [0, 5];
+          // const valuesArr = [20.0, 0.1];
+          
+          // const farKFrame = new THREE.NumberKeyframeTrack('.fog.far',timesArr,valuesArr, THREE.InterpolateLinear);
+          // const fogClip = new THREE.AnimationClip(null,timesArr[timesArr.length-1],[farKFrame]);
+          // const fogAction = sceneMixer.clipAction(fogClip);
+          // fogAction.setLoop(THREE.LoopPingPong,Infinity)
+          // fogAction.reset().play()
+
+          // mixerDoor.addEventListener( 'finished', function( e ) { 
+          //   doorAction[0].timeScale = -1;
+          //   doorAction[0].play();
+          // } );
+
+          
+          scene.add(gltf.scene);
       },
 
       // model loading
@@ -194,20 +218,57 @@ function loadModels() {
       console.log( 'An error happened' );
     }
   );
+
+}
+
+function loadGhost(){
+  loader.load(
+    './ghost1/scene.gltf',
+    function (gltf) {
+      gltf.animations; // Array<THREE.AnimationClip>
+      gltf.scene; // THREE.Group
+      gltf.scenes; // Array<THREE.Group>
+      gltf.cameras; // Array<THREE.Camera>
+      gltf.asset; // Object
+      
+      // gltf.scene.rotation.y = Math.PI / 2;
+      // gltf.scene.animations = gltf.animations;
+      gltf.scene.position.set(-2.32, 0, -6.23);
+      // gltf.scene.scale.set(0.25, 0.25, 0.25);
+      gltf.scene.name = "ghost"
+      console.log('loaded:',gltf.scene);
+
+      scene.add( gltf.scene );
+    },
+    function ( xhr ) {
+      console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+    },
+    function ( error ) {
+      console.log( 'An error happened' );
+    }
+  );
 }
 
 // on resize
 window.addEventListener('resize', onWindowResize);
 
-
+// mixers array
+const mixers = [];
 
 // scene
 const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x000000,0.1,20)
+const sceneMixer = new THREE.AnimationMixer(scene);
+mixers.push(sceneMixer);
 
 // camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
 camera.position.set( -3, 2, 0 );
 camera.lookAt( 0, 1.8, 0 );
+
+// mixer for camera
+const cameraMixer = new THREE.AnimationMixer(camera);
+mixers.push(cameraMixer);
 
 // renderer
 const renderer = new THREE.WebGLRenderer();
@@ -216,8 +277,14 @@ renderer.shadowMap.type = THREE.PCFShadowMap; // default THREE.PCFShadowMap
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// mixers array
-const mixers = [];
+// post processing composer
+const composer = new THREE.EffectComposer( renderer );
+
+const width = window.innerWidth;
+const height = window.innerHeight;
+const ssaoPass = new THREE.SSAOPass( scene, camera, width, height );
+ssaoPass.kernelRadius = 8;
+composer.addPass( ssaoPass );
 
 // light
 const letThereBeLight = new THREE.PointLight( 0xffff55, 10, 100 );
@@ -244,7 +311,7 @@ scene.add( whiteAmbient );
 // scene.add( spotLightHelper );
 
 // front light
-const frontLight = new THREE.PointLight( 0xffffcc, 2, 50, 2 );
+const frontLight = new THREE.PointLight( 0xffffcc, 1.5, 50, 2 );
 frontLight.position.set( -1, 2.0, 1.8 );
 frontLight.castShadow = true;
 scene.add( frontLight );
@@ -263,7 +330,7 @@ frontLight.shadow.bias = -0.001;
 // scene.add( frontLightShadowHelper );
 
 // corridor light
-const corridorLight = new THREE.PointLight( 0xffffcc, 1, 50, 2 );
+const corridorLight = new THREE.PointLight( 0xffffcc, 0.5, 50, 2 );
 corridorLight.position.set( 3.7, 2, -4.5 );
 corridorLight.castShadow = true;
 scene.add( corridorLight );
@@ -271,10 +338,10 @@ const corridorLightHelper = new THREE.PointLightHelper( corridorLight, 0.1 );
 scene.add( corridorLightHelper );
 
 //Set up shadow properties for the light
-corridorLight.shadow.mapSize.width = 2048; // default
-corridorLight.shadow.mapSize.height = 2048; // default
-corridorLight.shadow.camera.near = 0.5; // default
-corridorLight.shadow.camera.far = 100; // default
+corridorLight.shadow.mapSize.width = 2048;
+corridorLight.shadow.mapSize.height = 2048;
+corridorLight.shadow.camera.near = 0.5; 
+corridorLight.shadow.camera.far = 100;
 corridorLight.shadow.bias = -0.001;
 
 //Create a helper for the shadow camera (optional)
@@ -358,17 +425,10 @@ function cinematicMove(path) {
   
   const cn_posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateLinear);
   const cinematicClip = new THREE.AnimationClip(null,timesArr[timesArr.length-1],[cn_posKFrame]);
-  const cinemaMixer = new THREE.AnimationMixer(camera);
-  const action = cinemaMixer.clipAction(cinematicClip);
-  mixers.push(cinemaMixer);
+  const action = cameraMixer.clipAction(cinematicClip);
   action.play();
 }
 // cinematicMove(path)
-
-// loader
-const loader = new THREE.GLTFLoader();
-
-var animationMixer;
 
 //init raycasting
 var raycaster = new THREE.Raycaster();
@@ -398,6 +458,11 @@ function raycasting() {
   }
 }
 
+// loader
+const loader = new THREE.GLTFLoader();
+
+var animationMixer; // TODO: clean this mixer
+
 // Load obj
 loadModels();
 
@@ -410,6 +475,15 @@ loadModels();
 // wall.position.set(-1, 1, -1.85);
 // scene.add(wall);
 
+// ----- Story -------
+var story_state = 0
+// 0: init
+// 1: checked in
+// 2: looked at keyhole 1
+// 3: rested
+// 4: looked at keyhole 2
+// 5: talked to woman (end)
+
 function animate() {
   if (controls.isLocked) requestAnimationFrame( animate );
   const delta = clock.getDelta();
@@ -419,7 +493,9 @@ function animate() {
   activateCameraBobbingWhenMoving();
 //   spotLightHelper.update();
   updateDebugScreen()
+  story_state = 2
   renderer.render(scene, camera);
+  // composer.render();
 }
 initFPSControls(document.body, scene, camera);
 animate();
@@ -451,10 +527,9 @@ function peepKeyhole(time) {
   
   const kh_posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateLinear);
   const keyholeClip = new THREE.AnimationClip(null,timesArr[timesArr.length-1],[kh_posKFrame]);
-  const keyholeMixer = new THREE.AnimationMixer(camera);
-  const action = keyholeMixer.clipAction(keyholeClip);
+  const action = cameraMixer.clipAction(keyholeClip);
   console.log('action:',action);
-  mixers.push(keyholeMixer);
+  mixers.push(cameraMixer);
   action.setLoop(THREE.LoopOnce)
 
   if (time == 2) {
@@ -469,9 +544,14 @@ function peepKeyhole(time) {
     scene.add( mesh );
   }
 
-  keyholeMixer.addEventListener( 'finished', function( e ) { 
-    if (time == 2){
+  cameraMixer.addEventListener( 'finished', function( e ) { 
+    if (time == 1){
+      scene.remove(scene.getObjectByName('ghost'));
+      showDialog("A woman? Who is she? a celebrity? The owner's daughter?","white")
+
+    } else if (time == 2){
       scene.remove(scene.getObjectByName('red'));
+      showDialog("What was that??", "white")
     }
   } ); // properties of e: type, action and direction
 
@@ -518,15 +598,68 @@ function stopAllAnimation() {
   animationMixer = null;
 }
 
+function showDialog(text, color) {
+  const dialogBox = document.getElementById('dialog')
+  dialogBox.textContent = text
+  dialogBox.style.color = color;
+  dialogBox.classList.remove('fadeout');
+  dialogBox.offsetWidth;
+  dialogBox.classList.add('fadeout');
+}
+
+function changeScene() {
+  // Trigger animation
+  var div = document.getElementById("curtain");
+  div.classList.remove("screen-change");
+  div.offsetWidth;
+  div.classList.add("screen-change");
+ 
+  // Trigger scene change
+  setTimeout(function() {
+      // Your real code should go here. I've added something
+      // just to demonstrate the change
+
+  }, 1000);
+};
+
 document.body.addEventListener('click', function(e) {
   if (!controls.isLocked || hoveredObject == null) return;
   if (animationMixer != null)stopAllAnimation();
   let lastObj = traverseUntilHoverable(hoveredObject.object);
   if (lastObj.name == 'hoverable_doorBody') {
-    doorAction[0].reset().play(); 
+    if (story_state == 2) {
+      doorAction[0].reset().play();
+      setTimeout(() => {
+
+        changeScene()
+
+        setTimeout(() => {
+          doorAction[0].reset()
+          doorAction[0].stop()
+
+          doorAction[1].stop()
+          // doorAction[1].timeScale = -1
+          doorAction[1].time = doorAction[1].getClip().duration;
+          doorAction[1].play();
+
+          showDialog("Well, that was a good night sleep. I should head out now","white")
+        }, 5000);
+      }, 1000);
+      
+      story_state = 3
+    } else {
+      
+    }
   } else {
     console.log('lastObj:',lastObj);
-    peepKeyhole(2);
+    if (story_state == 1) {
+      loadGhost();
+      peepKeyhole(1);
+      story_state = 2
+    } else if (story_state == 3) {
+      peepKeyhole(2);
+      story_state = 4
+    }
   }
   if (lastObj.animations.length > 0) animateObject(lastObj);
 })
