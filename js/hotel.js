@@ -56,6 +56,7 @@ function traverseThroughChildrenAndGiveName(obj, name) {
 }
 
 const doorAction = []
+var action_woman;
 
 function loadModels() {
 
@@ -188,6 +189,50 @@ function loadModels() {
           console.log( 'An error happened' );
       }
   );
+
+  loader.load(
+    './woman/scene.gltf',
+    function (gltf) {
+      gltf.animations; // Array<THREE.AnimationClip>
+      gltf.scene; // THREE.Group
+      gltf.scenes; // Array<THREE.Group>
+      gltf.cameras; // Array<THREE.Camera>
+      gltf.asset; // Object
+
+      // traverseThroughChildrenAndGiveName(gltf.scene, "hoverable");
+      
+      gltf.scene.rotation.y = -Math.PI * 0.4;
+      gltf.scene.position.set(0.1, 0, -0.65);
+      gltf.scene.scale.set(0.0111, 0.0111, 0.0111);
+      gltf.scene.children[0].name = "hoverable_woman";
+      console.log('gltf.scene:',gltf.scene);
+      console.log(dumpObject(gltf.scene));
+
+      // const geometry = new THREE.SphereGeometry( 32, 32, 16 );
+      // const geometry = new THREE.BoxGeometry( 0.7, 1.7, 0.7 );
+      const geometry = new THREE.BoxGeometry( 70, 160, 70 );
+      const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } );
+      const sphere = new THREE.Mesh( geometry, material );
+      sphere.position.set(0, 100, 0)
+      sphere.name = 'hoverable_woman';
+      gltf.scene.add( sphere );
+
+      gltf.scene.animations = gltf.animations;
+      const clips = gltf.animations;
+      const mixerWoman = new THREE.AnimationMixer(gltf.scene)
+      action_woman = mixerWoman.clipAction(clips[0])
+      mixers.push(mixerWoman)
+
+      // addCollisionChecking(gltf.scene, collisionBoxes, true);
+      scene.add( gltf.scene );
+    },
+    function ( xhr ) {
+      console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+    },
+    function ( error ) {
+      console.log( 'An error happened' );
+    }
+  );
   
   loader.load(
     './coba2/models/table/scene.gltf',
@@ -221,7 +266,7 @@ function loadModels() {
 
 }
 
-function loadGhost(){
+function loadGhost(callback){
   loader.load(
     './ghost1/scene.gltf',
     function (gltf) {
@@ -239,6 +284,8 @@ function loadGhost(){
       console.log('loaded:',gltf.scene);
 
       scene.add( gltf.scene );
+
+      callback();
     },
     function ( xhr ) {
       console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
@@ -442,6 +489,7 @@ pointer.y = 0;
 function raycasting() {
   raycaster.setFromCamera(pointer, camera);
   const intersects = raycaster.intersectObjects(scene.children);
+  // console.log('intersects:',intersects);
   scene.remove(scene.getObjectByName("objectHoverHelper"));
   hoveredObject = null;
   for (let i = 0; i < intersects.length; i++) {
@@ -493,12 +541,11 @@ function animate() {
   activateCameraBobbingWhenMoving();
 //   spotLightHelper.update();
   updateDebugScreen()
-  story_state = 2
   renderer.render(scene, camera);
   // composer.render();
 }
 initFPSControls(document.body, scene, camera);
-animate();
+// animate();
 
 
 // Function land /////////////////////////////////////////////////////////////
@@ -528,14 +575,13 @@ function peepKeyhole(time) {
   const kh_posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateLinear);
   const keyholeClip = new THREE.AnimationClip(null,timesArr[timesArr.length-1],[kh_posKFrame]);
   const action = cameraMixer.clipAction(keyholeClip);
-  console.log('action:',action);
   mixers.push(cameraMixer);
-  action.setLoop(THREE.LoopOnce)
+  action.setLoop(THREE.LoopPingPong, 2)
 
   if (time == 2) {
     // red
     const geometry = new THREE.BoxGeometry( 0.1, 0.1, 0.1 );
-    const material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+    const material = new THREE.MeshBasicMaterial( { color: 0x880808 } );
     const mesh = new THREE.Mesh( geometry, material );
     mesh.position.x = 2.11065
     mesh.position.y = 1
@@ -551,7 +597,7 @@ function peepKeyhole(time) {
 
     } else if (time == 2){
       scene.remove(scene.getObjectByName('red'));
-      showDialog("What was that??", "white")
+      showDialog("What was that red stuff? I should talk to the owner about this.", "white")
     }
   } ); // properties of e: type, action and direction
 
@@ -622,46 +668,142 @@ function changeScene() {
   }, 1000);
 };
 
+// let exposition_mode = false;
+let intro = false; // TODO: cut for memory?
+let introTicker = 0;
+let outro = false; // TODO: cut for memory?
+let outroTicker = 0;
 document.body.addEventListener('click', function(e) {
-  if (!controls.isLocked || hoveredObject == null) return;
-  if (animationMixer != null)stopAllAnimation();
-  let lastObj = traverseUntilHoverable(hoveredObject.object);
-  if (lastObj.name == 'hoverable_doorBody') {
-    if (story_state == 2) {
-      doorAction[0].reset().play();
-      setTimeout(() => {
+  if (intro){
+    const dialogBox = document.getElementById('dialog')
+    if (introTicker == 0){
+      dialogBox.textContent = "Yes. Room for 1 please."
+      dialogBox.style.color = "white";
+    } else if (introTicker == 1) {
+      dialogBox.textContent = "Sure. Here is your key. Your room is at the second room on the left of the hallway. By the way, the first room on the left is the store room. You ABSELUTELY cannot enter that room. Okay?"
+      dialogBox.style.color = "pink";
+    } else if (introTicker == 2) {
+      dialogBox.textContent = "Uhh... Okay"
+      dialogBox.style.color = "white";
+    } else if (introTicker == 3) {
+      dialogBox.textContent = "Superb. Have a nice rest";
+      dialogBox.style.color = "pink";
+    } else if (introTicker == 4) {
+      // dialogBox.textContent = "Thank you";
+      // dialogBox.style.color = "white";
 
-        changeScene()
-
-        setTimeout(() => {
-          doorAction[0].reset()
-          doorAction[0].stop()
-
-          doorAction[1].stop()
-          // doorAction[1].timeScale = -1
-          doorAction[1].time = doorAction[1].getClip().duration;
-          doorAction[1].play();
-
-          showDialog("Well, that was a good night sleep. I should head out now","white")
-        }, 5000);
-      }, 1000);
-      
-      story_state = 3
-    } else {
-      
+      dialogBox.style.opacity = 0;
+      dialogBox.classList.remove('fadeout');
+      dialogBox.offsetWidth;
+      dialogBox.classList.add('fadeout');
+      introTicker = 0;
+      intro = false;
+      story_state = 1;
+      controls.connect();
+      connectKey(document.body);
     }
+    introTicker++;
+  } else if (outro) {
+    const dialogBox = document.getElementById('dialog')
+    if (outroTicker == 0){
+      dialogBox.textContent = "Sigh. Did you look through the keyhole?"
+      dialogBox.style.color = "pink";
+    } else if (outroTicker == 1) {
+      dialogBox.textContent = "Yeah.. sorry"
+      dialogBox.style.color = "white";
+    } else if (outroTicker == 2) {
+      dialogBox.textContent = "Well, I might as well tell you the story of what happened in that room.";
+      dialogBox.style.color = "pink";
+    } else if (outroTicker == 3) {
+      dialogBox.textContent = "A long time ago, a man murdered his wife in there, and we find that even now, whoever stays there gets very uncomfortable.";
+      dialogBox.style.color = "pink";
+    } else if (outroTicker == 4) {
+      dialogBox.textContent = "But these people were not ordinary.";
+      dialogBox.style.color = "pink";
+    } else if (outroTicker == 5) {
+      dialogBox.textContent = "They were white all over, except for their eyes, which were red.";
+      dialogBox.style.color = "pink";
+    } else if (outroTicker == 6) {
+      dialogBox.style.opacity = 0;
+      dialogBox.classList.remove('fadeout');
+      dialogBox.offsetWidth;
+      dialogBox.classList.add('fadeout');
+      outroTicker = 0;
+      outro = false;
+      story_state = 5;
+      controls.connect();
+      connectKey(document.body);
+    } 
+    outroTicker++;
   } else {
-    console.log('lastObj:',lastObj);
-    if (story_state == 1) {
-      loadGhost();
-      peepKeyhole(1);
-      story_state = 2
-    } else if (story_state == 3) {
-      peepKeyhole(2);
-      story_state = 4
+    if (!controls.isLocked || hoveredObject == null) return;
+    // if (animationMixer != null)stopAllAnimation();
+    let lastObj = traverseUntilHoverable(hoveredObject.object);
+    if (lastObj.name == 'hoverable_doorBody') {
+      if (story_state == 2) {
+        doorAction[0].reset().play();
+        setTimeout(() => {
+  
+          changeScene()
+  
+          setTimeout(() => {
+            doorAction[0].reset()
+            doorAction[0].stop()
+  
+            doorAction[1].stop()
+            // doorAction[1].timeScale = -1
+            doorAction[1].time = doorAction[1].getClip().duration;
+            doorAction[1].play();
+  
+            showDialog("Well, that was a good night sleep. I should head out now","white")
+          }, 5000);
+        }, 1000);
+        
+        story_state = 3
+      } else if (story_state < 2) {
+        showDialog("I can't sleep while thinking about what that lady said. I should investigate","white")
+      } else {
+        showDialog("I have slept already. I should head out now","white")
+      }
+    } else if (lastObj.name == 'hoverable_woman') {
+      console.log('lastObj:',lastObj);
+      if (story_state == 0) {
+        action_woman.reset().play()
+  
+        controls.disconnect();
+        disconnectKey(document.body)// Prevent movement
+        
+        const dialogBox = document.getElementById('dialog')
+        dialogBox.textContent = "Welcome to Hotel Harem Samgun, would you like to check in?"
+        dialogBox.style.color = "pink";
+        dialogBox.style.opacity = 0.7;
+        intro = true;
+      } else if (story_state == 4) {
+        controls.disconnect();
+        disconnectKey(document.body)// Prevent movement
+        
+        const dialogBox = document.getElementById('dialog')
+        dialogBox.textContent = "Umm, sorry but what was that store room about?"
+        dialogBox.style.color = "white";
+        dialogBox.style.opacity = 0.7;
+        outro = true;
+      } else {
+        showDialog("I shouldn't bother her again", "white")
+      }
+  
+    } else {
+      if (story_state == 1) {
+        loadGhost(function(){
+          peepKeyhole(1);
+          story_state = 2
+        });
+      } else if (story_state == 3) {
+        peepKeyhole(2);
+        story_state = 4
+      }
     }
+    // if (lastObj.animations.length > 0) animateObject(lastObj);
   }
-  if (lastObj.animations.length > 0) animateObject(lastObj);
 })
 
 // on resize

@@ -23,8 +23,7 @@ var FPSCollisionBox = new THREE.Box3();
 var FPSCollisionBoxHelper;
 
 function initFPSControls(domElement, scene, camera) {
-  domElement.onkeydown = onKeyDown;
-  domElement.onkeyup = onKeyUp;
+  connectKey(domElement);
   camera.position.y = personHeight;
   initialFOV = camera.fov;
   sprintFOV = camera.fov + 10;
@@ -143,4 +142,18 @@ function activateCameraBobbingWhenMoving() {
     // console.log('temp:',temp);
     // console.log('camera.position.y :',camera.position.y )
   }
+}
+
+function disconnectKey(domElement){
+  // domElement.onkeydown = onKeyDown;
+  // domElement.onkeyup = onKeyUp;
+  domElement.ownerDocument.removeEventListener('keydown', onKeyDown);
+  domElement.ownerDocument.removeEventListener('keyup', onKeyUp);
+}
+
+function connectKey(domElement) {
+  // domElement.onkeydown = onKeyDown;
+  // domElement.onkeyup = onKeyUp;
+  domElement.ownerDocument.addEventListener('keydown', onKeyDown);
+  domElement.ownerDocument.addEventListener('keyup', onKeyUp);
 }
