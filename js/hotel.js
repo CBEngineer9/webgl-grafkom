@@ -1,17 +1,8 @@
-
-function CreateRotationAnimation(period, axis = 'x') {
-
-  const times = [0, period], values = [0, 360];
-
-  const trackName = '.rotation[' + axis + ']';
-
-  const track = new NumberKeyframeTrack(trackName, times, values);
-
-  return new AnimationClip(null, period, [track]);
-
-}
-
-var collisionBoxes = [];
+var collisionBoxes = []; // array of THREE.Box3 yang nda bisa dilewati user. Untuk collision checking
+const doorAction = []
+var action_woman;
+var woman;
+const mixers = []; // mixers array
 
 // collision checking
 function addCollisionChecking(obj, boxes, isSimple = false) {
@@ -45,6 +36,62 @@ function addCollisionChecking(obj, boxes, isSimple = false) {
   }
 }
 
+// Load wall for collision checking
+function loadWall(show = false) {
+  let wall = new THREE.Mesh( new THREE.BoxGeometry(10, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(0, 1, 2);
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+  
+  wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(-1, 1, -1.85);
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+  
+  wall = new THREE.Mesh( new THREE.BoxGeometry(2, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(1.2, 1, -7.85);
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+  
+  wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(1.2, 1, -9.45);
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+  
+  wall = new THREE.Mesh( new THREE.BoxGeometry(10, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(-3.72, 1, 0);
+  wall.rotation.y = 90 * Math.PI / 180
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+  
+  wall = new THREE.Mesh( new THREE.BoxGeometry(15, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(3.90, 1, -4.5);
+  wall.rotation.y = 90 * Math.PI / 180
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+  
+  wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(2.28, 1, -4.85);
+  wall.rotation.y = 90 * Math.PI / 180
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+  
+  wall = new THREE.Mesh( new THREE.BoxGeometry(2.5, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(0, 1, -8.71);
+  wall.rotation.y = 90 * Math.PI / 180
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+}
+
+
+function CreateRotationAnimation(period, axis = 'x') {
+  const times = [0, period], values = [0, 360];
+  const trackName = '.rotation[' + axis + ']';
+  const track = new NumberKeyframeTrack(trackName, times, values);
+  return new AnimationClip(null, period, [track]);
+}
+
+
 // traverse through children and give name
 function traverseThroughChildrenAndGiveName(obj, name) {
   obj.name = name;
@@ -55,12 +102,8 @@ function traverseThroughChildrenAndGiveName(obj, name) {
   }
 }
 
-const doorAction = []
-var action_woman;
-var woman;
 
 function loadModels() {
-
   loader.load(
     "./room/frontRoom.gltf",
     // "./coba2/models/table/scene.gltf",
@@ -298,11 +341,6 @@ function loadGhost(callback){
   );
 }
 
-// on resize
-window.addEventListener('resize', onWindowResize);
-
-// mixers array
-const mixers = [];
 
 // scene
 const scene = new THREE.Scene();
@@ -515,51 +553,9 @@ var animationMixer; // TODO: clean this mixer
 
 // Load obj
 loadModels();
+// load wall
+loadWall(false);
 
-// Load wall for collision checking
-let wall = new THREE.Mesh( new THREE.BoxGeometry(10, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(0, 1, 2);
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(-1, 1, -1.85);
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(2, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(1.2, 1, -7.85);
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(1.2, 1, -9.45);
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(10, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(-3.72, 1, 0);
-wall.rotation.y = 90 * Math.PI / 180
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(15, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(3.90, 1, -4.5);
-wall.rotation.y = 90 * Math.PI / 180
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(2.28, 1, -4.85);
-wall.rotation.y = 90 * Math.PI / 180
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(2.5, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(0, 1, -8.71);
-wall.rotation.y = 90 * Math.PI / 180
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
 
 // ----- Story -------
 var story_state = 0
@@ -857,6 +853,11 @@ document.body.addEventListener('click', function(e) {
   }
 })
 
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
 // on resize
 window.addEventListener('resize', onWindowResize);
 
@@ -881,11 +882,6 @@ function rotateWomanToCamera() {
   woman.updateMatrix();
 }
 
-function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
 
 function updateDebugScreen() {
   document.getElementById('pos_x').innerText = "x=" + camera.position.x;
