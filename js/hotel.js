@@ -57,6 +57,7 @@ function traverseThroughChildrenAndGiveName(obj, name) {
 
 const doorAction = []
 var action_woman;
+var woman;
 
 function loadModels() {
 
@@ -212,10 +213,10 @@ function loadModels() {
       // const geometry = new THREE.BoxGeometry( 0.7, 1.7, 0.7 );
       const geometry = new THREE.BoxGeometry( 70, 160, 70 );
       const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } );
-      const sphere = new THREE.Mesh( geometry, material );
-      sphere.position.set(0, 100, 0)
-      sphere.name = 'hoverable_woman';
-      gltf.scene.add( sphere );
+      const box = new THREE.Mesh( geometry, material );
+      box.position.set(0, 100, 0)
+      box.name = 'hoverable_woman';
+      gltf.scene.add( box );
 
       gltf.scene.animations = gltf.animations;
       const clips = gltf.animations;
@@ -225,6 +226,7 @@ function loadModels() {
 
       // addCollisionChecking(gltf.scene, collisionBoxes, true);
       scene.add( gltf.scene );
+      woman = gltf.scene;
     },
     function ( xhr ) {
       console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
@@ -732,6 +734,10 @@ document.body.addEventListener('click', function(e) {
       dialogBox.classList.remove('fadeout');
       dialogBox.offsetWidth;
       dialogBox.classList.add('fadeout');
+      
+      woman.rotation.y = - Math.PI * 0.4 ;
+      woman.updateMatrix();
+
       introTicker = 0;
       intro = false;
       story_state = 1;
@@ -764,6 +770,10 @@ document.body.addEventListener('click', function(e) {
       dialogBox.classList.remove('fadeout');
       dialogBox.offsetWidth;
       dialogBox.classList.add('fadeout');
+
+      woman.rotation.y = - Math.PI * 0.4 ;
+      woman.updateMatrix();
+
       outroTicker = 0;
       outro = false;
       story_state = 5;
@@ -805,6 +815,8 @@ document.body.addEventListener('click', function(e) {
       console.log('lastObj:',lastObj);
       if (story_state == 0) {
         action_woman.reset().play()
+
+        rotateWomanToCamera();
   
         controls.disconnect();
         disconnectKey(document.body)// Prevent movement
@@ -815,6 +827,9 @@ document.body.addEventListener('click', function(e) {
         dialogBox.style.opacity = 0.7;
         intro = true;
       } else if (story_state == 4) {
+        let ye = camera.getWorldDirection().y;
+        console.log('ye:',ye);
+        // woman.rotation.y = 
         controls.disconnect();
         disconnectKey(document.body)// Prevent movement
         
@@ -844,6 +859,28 @@ document.body.addEventListener('click', function(e) {
 
 // on resize
 window.addEventListener('resize', onWindowResize);
+
+function rotateWomanToCamera() {
+  let camdir = new THREE.Vector3();
+  camera.getWorldPosition(camdir);
+  console.log('camdir:', camdir);
+
+  let woman_dir = new THREE.Vector3();
+  woman.getWorldPosition(woman_dir);
+  console.log('woman_dir:', woman_dir);
+
+  // let vec1 = new THREE.Vector2(woman_dir.x, woman_dir.z)
+  let vec1 = new THREE.Vector2(-1, 0);
+  let vec2 = new THREE.Vector2(camdir.x, camdir.z);
+  vec1.normalize();
+  vec2.normalize();
+  let dot = vec1.dot(vec2);
+  console.log('dot:', dot);
+  console.log('deg:', Math.acos(dot), ' rad');
+  woman.rotation.y = Math.acos(dot) - Math.PI * 0.4;
+  woman.updateMatrix();
+}
+
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
