@@ -16,7 +16,6 @@ var collisionBoxes = [];
 // collision checking
 function addCollisionChecking(obj, boxes, isSimple = false) {
   if (!isSimple) {
-
     const hleper = new THREE.BoxHelper(obj, 0xeeeeee )
     console.log('hleper:',hleper);
     scene.add(hleper);
@@ -41,7 +40,8 @@ function addCollisionChecking(obj, boxes, isSimple = false) {
   }
   else {
     boxes.push(new THREE.Box3().setFromObject(obj));
-    scene.add(new THREE.Box3Helper( new THREE.Box3().setFromObject(obj), 0xeeeeee ));
+    //biar bisa liat mana yang tidak bisa dilewati untuk debug
+    // scene.add(new THREE.Box3Helper( new THREE.Box3().setFromObject(obj), 0xeeeeee ));
   }
 }
 
@@ -452,7 +452,7 @@ function raycasting() {
     objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
     objectHoverHelper.name = "objectHoverHelper";
     hoveredObject = intersects[i];
-    console.log('hoveredObject:',hoveredObject);
+    // console.log('hoveredObject:',hoveredObject);
     scene.add(objectHoverHelper);
     break;
   }
@@ -467,12 +467,48 @@ var animationMixer; // TODO: clean this mixer
 loadModels();
 
 // Load wall for collision checking
-// let wall = new THREE.Mesh( new THREE.BoxGeometry(10, 5, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-// wall.position.set(0, 1, 2);
+let wall = new THREE.Mesh( new THREE.BoxGeometry(10, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+wall.position.set(0, 1, 2);
+addCollisionChecking(wall, collisionBoxes, true);
 // scene.add(wall);
 
-// wall = new THREE.Mesh( new THREE.BoxGeometry(6, 5, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-// wall.position.set(-1, 1, -1.85);
+wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+wall.position.set(-1, 1, -1.85);
+addCollisionChecking(wall, collisionBoxes, true);
+// scene.add(wall);
+
+wall = new THREE.Mesh( new THREE.BoxGeometry(2, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+wall.position.set(1.2, 1, -7.85);
+addCollisionChecking(wall, collisionBoxes, true);
+// scene.add(wall);
+
+wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+wall.position.set(1.2, 1, -9.45);
+addCollisionChecking(wall, collisionBoxes, true);
+// scene.add(wall);
+
+wall = new THREE.Mesh( new THREE.BoxGeometry(10, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+wall.position.set(-3.72, 1, 0);
+wall.rotation.y = 90 * Math.PI / 180
+addCollisionChecking(wall, collisionBoxes, true);
+// scene.add(wall);
+
+wall = new THREE.Mesh( new THREE.BoxGeometry(15, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+wall.position.set(3.90, 1, -4.5);
+wall.rotation.y = 90 * Math.PI / 180
+addCollisionChecking(wall, collisionBoxes, true);
+// scene.add(wall);
+
+wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+wall.position.set(2.28, 1, -4.85);
+wall.rotation.y = 90 * Math.PI / 180
+addCollisionChecking(wall, collisionBoxes, true);
+// scene.add(wall);
+
+wall = new THREE.Mesh( new THREE.BoxGeometry(2.5, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+wall.position.set(0, 1, -8.71);
+wall.rotation.y = 90 * Math.PI / 180
+addCollisionChecking(wall, collisionBoxes, true);
 // scene.add(wall);
 
 // ----- Story -------
@@ -498,7 +534,7 @@ function animate() {
   // composer.render();
 }
 initFPSControls(document.body, scene, camera);
-animate();
+// animate();
 
 
 // Function land /////////////////////////////////////////////////////////////
