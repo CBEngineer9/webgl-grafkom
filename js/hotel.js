@@ -550,6 +550,13 @@ function loadModels() {
       mixers.push(mixerTable)
       // action_table.reset().play();
 
+      gltf.scene.traverse( function ( child ) {
+        if ( child.isObject3D ) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      } );
+
       addCollisionChecking(gltf.scene, collisionBoxes, true);
       scene.add( gltf.scene );
       animate();
