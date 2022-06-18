@@ -189,7 +189,9 @@ initFPSControls(document.body, scene, camera);
 
 
 // Function land /////////////////////////////////////////////////////////////
-
+/**
+ * fungsi animate yang diulang-ulang
+ */
 function animate() {
   setTimeout(() => {
     if (controls.isLocked) requestAnimationFrame( animate );
@@ -205,53 +207,60 @@ function animate() {
   composer.render();
 }
 
-// Load wall for collision checking
+/**
+ * load wall untuk collision checking
+ * @param {Boolean} show true jika wall nya bisa keliatan
+ * 
+ */
 function loadWall(show) {
   let wall = new THREE.Mesh( new THREE.BoxGeometry(10, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
   wall.position.set(0, 1, 2);
-  addCollisionChecking(wall, collisionBoxes, true);
+  addCollisionChecking(wall, collisionBoxes);
   if (show) scene.add(wall);
 
   wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
   wall.position.set(-1, 1, -1.85);
-  addCollisionChecking(wall, collisionBoxes, true);
+  addCollisionChecking(wall, collisionBoxes);
   if (show) scene.add(wall);
 
   wall = new THREE.Mesh( new THREE.BoxGeometry(2, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
   wall.position.set(1.2, 1, -7.85);
-  addCollisionChecking(wall, collisionBoxes, true);
+  addCollisionChecking(wall, collisionBoxes);
   if (show) scene.add(wall);
 
   wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
   wall.position.set(1.2, 1, -9.45);
-  addCollisionChecking(wall, collisionBoxes, true);
+  addCollisionChecking(wall, collisionBoxes);
   if (show) scene.add(wall);
 
   wall = new THREE.Mesh( new THREE.BoxGeometry(10, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
   wall.position.set(-3.72, 1, 0);
   wall.rotation.y = 90 * Math.PI / 180
-  addCollisionChecking(wall, collisionBoxes, true);
+  addCollisionChecking(wall, collisionBoxes);
   if (show) scene.add(wall);
 
   wall = new THREE.Mesh( new THREE.BoxGeometry(15, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
   wall.position.set(3.90, 1, -4.5);
   wall.rotation.y = 90 * Math.PI / 180
-  addCollisionChecking(wall, collisionBoxes, true);
+  addCollisionChecking(wall, collisionBoxes);
   if (show) scene.add(wall);
 
   wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
   wall.position.set(2.28, 1, -4.85);
   wall.rotation.y = 90 * Math.PI / 180
-  addCollisionChecking(wall, collisionBoxes, true);
+  addCollisionChecking(wall, collisionBoxes);
   if (show) scene.add(wall);
 
   wall = new THREE.Mesh( new THREE.BoxGeometry(2.5, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
   wall.position.set(0, 1, -8.71);
   wall.rotation.y = 90 * Math.PI / 180
-  addCollisionChecking(wall, collisionBoxes, true);
+  addCollisionChecking(wall, collisionBoxes);
   if (show) scene.add(wall);
 }
 
+/**
+ * raycasting... mirip dengan raytracing 😁
+ */
 function raycasting() {
   raycaster.setFromCamera(pointer, camera);
   const intersects = raycaster.intersectObjects(scene.children);
@@ -326,6 +335,9 @@ function showPathHelper(path) {
   scene.add( line );
 }
 
+/**
+ * fungsi load semua model
+ */
 function loadModels() {
   loader.load(
     "./room/frontRoom.gltf",
@@ -578,7 +590,11 @@ function loadGhost(callback){
   );
 }
 
-// traverse through children and give name
+/**
+ * lewati children dari obj secara rekursif lalu berikan nama sesuai parameter
+ * @param {THREE.Object3D} obj 
+ * @param {String} name 
+ */
 function traverseThroughChildrenAndGiveName(obj, name) {
   obj.name = name;
   if (obj.children.length != 0) {
@@ -588,36 +604,14 @@ function traverseThroughChildrenAndGiveName(obj, name) {
   }
 }
 
-// collision checking
-function addCollisionChecking(obj, boxes, isSimple = false) {
-  if (!isSimple) {
-    const hleper = new THREE.BoxHelper(obj, 0xeeeeee )
-    console.log('hleper:',hleper);
-    scene.add(hleper);
 
-    if (obj.children.length == 0 && obj.isMesh) {
-      // const material = new THREE.MeshBasicMaterial( { color: 0x000000 } );
-      // const colObj = new THREE.Mesh(obj.geometry, material)
-      // obj.add(colObj)
-
-      obj.geometry.computeBoundingBox()
-      obj.geometry.computeBoundingSphere()
-
-      // const box = new THREE.Box3().setFromObject(obj)
-      // boxes.push(box);
-
-    }
-    else {
-      obj.children.forEach(child => {
-        addCollisionChecking(child, boxes);
-      });
-    }
-  }
-  else {
+/**
+ * masukkan obj ke dalam array boxes untuk coliision checking
+ * @param {THREE.Object3D} obj 
+ * @param {Array<THREE.Box3>} boxes 
+ */
+function addCollisionChecking(obj, boxes) {
     boxes.push(new THREE.Box3().setFromObject(obj));
-    //biar bisa liat mana yang tidak bisa dilewati untuk debug
-    // scene.add(new THREE.Box3Helper( new THREE.Box3().setFromObject(obj), 0xeeeeee ));
-  }
 }
 
 // light flicker
@@ -683,6 +677,11 @@ function peepKeyhole(time) {
   console.log('playing');
 }
 
+/**
+ * traverse through obj sampe last object yaitu object yang parent nya scene
+ * @param {THREE.Object3D} obj objek yang mau di lewati
+ * @returns {THREE.Object3D} last object, object yang parent nya scene
+ */
 function traverseUntilLastParent(obj) {
   if (obj.parent == scene) return obj;
   else {
@@ -690,36 +689,16 @@ function traverseUntilLastParent(obj) {
   }
 }
 
+/**
+ * traverse through objek sampe objek itu namanya dimulai dengan 'hoverable'
+ * @param {THREE.Object3D} obj objek yang mau di lewati
+ * @returns {THREE.Object3D} objek yang hoverable (namanya startswith 'hoverable')
+ */
 function traverseUntilHoverable(obj) {
   if (obj.parent == scene || obj.name.startsWith('hoverable')) return obj;
   else {
     return traverseUntilLastParent(obj.parent);
   }
-}
-
-function animateObject(obj) {
-  animationMixer = new THREE.AnimationMixer(obj);
-  animationMixer.addEventListener('finished', stopAllAnimation)
-  var animation = animationMixer.clipAction(obj.animations[0]);
-  animation.timeScale = 1;
-  animation.setLoop(THREE.LoopOnce);
-  animation.clampWhenFinished = true;
-  animation.enable = true;
-  animation.reset();
-  animation.play();
-}
-
-function stopAllAnimation() {
-  animationMixer.stopAllAction();
-  let tempRoot = animationMixer.getRoot();
-  let tempClips = tempRoot.animations;
-  for (let i = 0; i < tempClips.length; i++) {
-    let tempClip = tempClips[i];
-    animationMixer.uncacheClip(tempClip);
-    animationMixer.uncacheAction(tempClip, tempRoot);
-  }
-  animationMixer.uncacheRoot(tempRoot);
-  animationMixer = null;
 }
 
 function showDialog(text, color) {
