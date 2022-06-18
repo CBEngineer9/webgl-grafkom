@@ -1,67 +1,332 @@
-
-function CreateRotationAnimation(period, axis = 'x') {
-
-  const times = [0, period], values = [0, 360];
-
-  const trackName = '.rotation[' + axis + ']';
-
-  const track = new NumberKeyframeTrack(trackName, times, values);
-
-  return new AnimationClip(null, period, [track]);
-
-}
-
 var collisionBoxes = [];
-
-// collision checking
-function addCollisionChecking(obj, boxes, isSimple = false) {
-  if (!isSimple) {
-    const hleper = new THREE.BoxHelper(obj, 0xeeeeee )
-    console.log('hleper:',hleper);
-    scene.add(hleper);
-
-    if (obj.children.length == 0 && obj.isMesh) {
-      // const material = new THREE.MeshBasicMaterial( { color: 0x000000 } );
-      // const colObj = new THREE.Mesh(obj.geometry, material)
-      // obj.add(colObj)
-
-      obj.geometry.computeBoundingBox()
-      obj.geometry.computeBoundingSphere()
-
-      // const box = new THREE.Box3().setFromObject(obj)
-      // boxes.push(box);
-
-    }
-    else {
-      obj.children.forEach(child => {
-        addCollisionChecking(child, boxes);
-      });
-    }
-  }
-  else {
-    boxes.push(new THREE.Box3().setFromObject(obj));
-    //biar bisa liat mana yang tidak bisa dilewati untuk debug
-    // scene.add(new THREE.Box3Helper( new THREE.Box3().setFromObject(obj), 0xeeeeee ));
-  }
-}
-
-// traverse through children and give name
-function traverseThroughChildrenAndGiveName(obj, name) {
-  obj.name = name;
-  if (obj.children.length != 0) {
-    obj.children.forEach(child => {
-      traverseThroughChildrenAndGiveName(child, name)
-    });
-  }
-}
-
 const doorAction = []
 var action_woman;
 var action_table;
 var woman;
 
-function loadModels() {
 
+// mixers array
+const mixers = [];
+
+// scene
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x000000,0.1,20)
+const sceneMixer = new THREE.AnimationMixer(scene);
+mixers.push(sceneMixer);
+
+// camera
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
+camera.position.set( -3, 2, 0 );
+camera.lookAt( 0, 1.8, 0 );
+
+// mixer for camera
+const cameraMixer = new THREE.AnimationMixer(camera);
+mixers.push(cameraMixer);
+
+// renderer
+const renderer = new THREE.WebGLRenderer();
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap; // default THREE.PCFShadowMap
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// stats
+const stats = new Stats();
+
+// post processing composer
+const composer = new THREE.EffectComposer( renderer );
+
+const width = window.innerWidth;
+const height = window.innerHeight;
+
+const renderPass = new THREE.RenderPass( scene, camera );
+composer.addPass( renderPass );
+
+// const ssaoPass = new THREE.SSAOPass( scene, camera, width, height );
+// ssaoPass.kernelRadius = 8;
+// composer.addPass( ssaoPass );
+
+outlinePass = new THREE.OutlinePass( new THREE.Vector2( window.innerWidth, window.innerHeight ), scene, camera );
+outlinePass.hiddenEdgeColor.set( '' );
+composer.addPass( outlinePass );
+
+// light
+const letThereBeLight = new THREE.AmbientLight( 0xFFFFFF , 10);
+
+const whiteAmbient = new THREE.AmbientLight( 0x808080 , 2); // white ambient
+scene.add( whiteAmbient );
+
+// front light
+const frontLight = new THREE.PointLight( 0xffffcc, 1.5, 50, 2 );
+frontLight.position.set( -1, 2.0, 1.8 );
+frontLight.castShadow = true;
+scene.add( frontLight );
+const frontLightHelper = new THREE.PointLightHelper( frontLight, 0.1 );
+
+//Set up shadow properties for the light
+frontLight.shadow.mapSize.width = 2048; // default
+frontLight.shadow.mapSize.height = 2048; // default
+frontLight.shadow.camera.near = 0.5; // default
+frontLight.shadow.camera.far = 100; // default
+frontLight.shadow.bias = -0.001;
+
+//Create a helper for the shadow camera (optional)
+// const frontLightShadowHelper = new THREE.CameraHelper( frontLight.shadow.camera );
+// scene.add( frontLightShadowHelper );
+
+// corridor light
+const corridorLight = new THREE.PointLight( 0xffffcc, 0.5, 50, 2 );
+corridorLight.position.set( 3.7, 2, -4.5 );
+corridorLight.castShadow = true;
+scene.add( corridorLight );
+const corridorLightHelper = new THREE.PointLightHelper( corridorLight, 0.1 );
+
+//Set up shadow properties for the light
+corridorLight.shadow.mapSize.width = 2048;
+corridorLight.shadow.mapSize.height = 2048;
+corridorLight.shadow.camera.near = 0.5; 
+corridorLight.shadow.camera.far = 100;
+corridorLight.shadow.bias = -0.001;
+
+//Create a helper for the shadow camera (optional)
+// const corridorLightShadowHelper = new THREE.CameraHelper( corridorLight.shadow.camera );
+// scene.add( corridorLightShadowHelper );
+
+// on resize
+window.addEventListener('resize', onWindowResize);
+
+corridorFlicker()
+
+// clock
+const clock = new THREE.Clock();
+
+// control
+var cinematicMode = false;
+// const controls = new THREE.OrbitControls(camera, renderer.domElement);
+var controls = new THREE.PointerLockControls(camera, document.body);
+// controls.maxPolarAngle = Math.PI * 5 / 6;
+// controls.minPolarAngle = Math.PI * 1 / 6;
+
+var menu = document.getElementById('menu');
+document.body.addEventListener('click', function(e) {
+  if (!controls.isLocked) controls.lock();
+});
+
+controls.addEventListener( 'lock', function() {
+  menu.style.display = 'none';
+  setTimeout(animate, 1);
+});
+
+controls.addEventListener( 'unlock', function() {
+	menu.style.display = 'flex';
+});
+
+// camera path
+const path = new THREE.CurvePath();
+path.add(new THREE.LineCurve3(new THREE.Vector3(-3,1.8,0), new THREE.Vector3(-1,1.8,0)))
+path.add(new THREE.CubicBezierCurve3(new THREE.Vector3(-1,1.8,0), new THREE.Vector3(0,1.8,0), new THREE.Vector3(4,1.8,2.7), new THREE.Vector3(3.2,1.8,-1.3)))
+path.add(new THREE.CatmullRomCurve3([new THREE.Vector3(3.2,1.8,-1.3), new THREE.Vector3(2.5,1,-6.2), new THREE.Vector3(3,1.8,-8), new THREE.Vector3(1.4,1.8,-8.7)]))
+
+// showPathHelper(path);
+
+var cinematicAction;
+cinematicMove(path)
+
+let cinematic = false;
+
+let debugMode = false;
+
+let thereBeLight = false;
+function toggleLTBL() {
+  thereBeLight ^= 1;
+  if (thereBeLight) {
+    scene.add( letThereBeLight );
+  } else {
+    scene.remove(letThereBeLight);
+  }
+}
+
+document.body.addEventListener('keyup',(e) => {
+  if (e.key == 'F2') {
+    toggleCinematic();
+  } else if (e.key == 'F4'){
+    toggleDebugMode();
+  } else if (e.key == 'F8'){
+    toggleLTBL();
+  }
+})
+
+//init raycasting
+var raycaster = new THREE.Raycaster();
+var pointer = new THREE.Vector2();
+var objectHoverHelper;
+var hoveredObject;
+// set pointer location to center of the window
+pointer.x = 0;
+pointer.y = 0;
+
+// loader
+const loader = new THREE.GLTFLoader();
+
+var animationMixer; // TODO: clean this mixer
+
+// Load obj
+loadModels();
+
+loadWall(false);
+
+// ----- Story -------
+var story_state = 0
+// 0: init
+// 1: checked in
+// 2: looked at keyhole 1
+// 3: rested
+// 4: looked at keyhole 2
+// 5: talked to woman (end)
+
+initFPSControls(document.body, scene, camera);
+// animate();
+
+
+// Function land /////////////////////////////////////////////////////////////
+
+function animate() {
+  setTimeout(() => {
+    if (controls.isLocked) requestAnimationFrame( animate );
+  }, 1000/60);
+  const delta = clock.getDelta();
+  for ( const mixer of mixers ) mixer.update( delta );
+  stats.update();
+  raycasting();
+  animateControls(camera, controls, collisionBoxes);
+  activateCameraBobbingWhenMoving();
+  updateDebugScreen()
+  // renderer.render(scene, camera);
+  composer.render();
+}
+
+// Load wall for collision checking
+function loadWall(show) {
+  let wall = new THREE.Mesh( new THREE.BoxGeometry(10, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(0, 1, 2);
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+
+  wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(-1, 1, -1.85);
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+
+  wall = new THREE.Mesh( new THREE.BoxGeometry(2, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(1.2, 1, -7.85);
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+
+  wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(1.2, 1, -9.45);
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+
+  wall = new THREE.Mesh( new THREE.BoxGeometry(10, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(-3.72, 1, 0);
+  wall.rotation.y = 90 * Math.PI / 180
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+
+  wall = new THREE.Mesh( new THREE.BoxGeometry(15, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(3.90, 1, -4.5);
+  wall.rotation.y = 90 * Math.PI / 180
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+
+  wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(2.28, 1, -4.85);
+  wall.rotation.y = 90 * Math.PI / 180
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+
+  wall = new THREE.Mesh( new THREE.BoxGeometry(2.5, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
+  wall.position.set(0, 1, -8.71);
+  wall.rotation.y = 90 * Math.PI / 180
+  addCollisionChecking(wall, collisionBoxes, true);
+  if (show) scene.add(wall);
+}
+
+function raycasting() {
+  raycaster.setFromCamera(pointer, camera);
+  const intersects = raycaster.intersectObjects(scene.children);
+  // console.log('intersects:',intersects);
+  // scene.remove(scene.getObjectByName("objectHoverHelper"));
+  outlinePass.selectedObjects = [];
+  hoveredObject = null;
+  for (let i = 0; i < intersects.length; i++) {
+    if (intersects[i].object.name == "objectHoverHelper") continue;
+    if (
+      !intersects[i].object.name.startsWith("hoverable")
+    ) continue;
+
+    hoveredObject = intersects[i];
+    // console.log('hoveredObject:',hoveredObject);
+
+    // objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
+    // objectHoverHelper.name = "objectHoverHelper";
+    // scene.add(objectHoverHelper);
+    
+    outlinePass.selectedObjects = [intersects[i].object];
+    break;
+  }
+}
+
+function toggleDebugMode(){
+  debugMode ^= 1;
+  if (debugMode){
+    document.body.appendChild( stats.dom );
+    document.getElementById('pos').style.display = 'block';
+    scene.add( frontLightHelper );
+    scene.add( corridorLightHelper );
+  } else {
+
+  }
+  toggleFPSCollisionBoxHelper()
+}
+
+function toggleCinematic() {
+  cinematic ^= 1;
+  if (!cinematic) {
+    cinematicAction.reset().play();
+  } else {
+    cinematicAction.stop();
+  }
+}
+
+function cinematicMove(path) {
+  const points = path.getPoints();
+  const timesArr = [];
+  const valuesArr = [];
+  for (let i = 0; i < points.length; i++) {
+    const element = points[i];
+    timesArr.push(i);
+    
+    valuesArr.push(element.x);
+    valuesArr.push(element.y);
+    valuesArr.push(element.z);
+  }
+  
+  const cn_posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateLinear);
+  const cinematicClip = new THREE.AnimationClip(null,timesArr[timesArr.length-1],[cn_posKFrame]);
+  cinematicAction = cameraMixer.clipAction(cinematicClip);
+  cinematicAction.setLoop(THREE.LoopPingPong,Infinity)
+}
+
+function showPathHelper(path) {
+  const points = path.getPoints();
+  const geometry = new THREE.BufferGeometry().setFromPoints( points );
+  const material = new THREE.LineBasicMaterial( { color: 0xffffff } );
+  const line = new THREE.Line( geometry, material );
+  scene.add( line );
+}
+
+function loadModels() {
   loader.load(
     "./room/frontRoom.gltf",
     // "./coba2/models/table/scene.gltf",
@@ -313,325 +578,64 @@ function loadGhost(callback){
   );
 }
 
-// on resize
-window.addEventListener('resize', onWindowResize);
+// traverse through children and give name
+function traverseThroughChildrenAndGiveName(obj, name) {
+  obj.name = name;
+  if (obj.children.length != 0) {
+    obj.children.forEach(child => {
+      traverseThroughChildrenAndGiveName(child, name)
+    });
+  }
+}
 
-// mixers array
-const mixers = [];
+// collision checking
+function addCollisionChecking(obj, boxes, isSimple = false) {
+  if (!isSimple) {
+    const hleper = new THREE.BoxHelper(obj, 0xeeeeee )
+    console.log('hleper:',hleper);
+    scene.add(hleper);
 
-// scene
-const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x000000,0.1,20)
-const sceneMixer = new THREE.AnimationMixer(scene);
-mixers.push(sceneMixer);
+    if (obj.children.length == 0 && obj.isMesh) {
+      // const material = new THREE.MeshBasicMaterial( { color: 0x000000 } );
+      // const colObj = new THREE.Mesh(obj.geometry, material)
+      // obj.add(colObj)
 
-// camera
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
-camera.position.set( -3, 2, 0 );
-camera.lookAt( 0, 1.8, 0 );
+      obj.geometry.computeBoundingBox()
+      obj.geometry.computeBoundingSphere()
 
-// mixer for camera
-const cameraMixer = new THREE.AnimationMixer(camera);
-mixers.push(cameraMixer);
+      // const box = new THREE.Box3().setFromObject(obj)
+      // boxes.push(box);
 
-// renderer
-const renderer = new THREE.WebGLRenderer();
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFShadowMap; // default THREE.PCFShadowMap
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-// stats
-const stats = new Stats();
-
-// post processing composer
-const composer = new THREE.EffectComposer( renderer );
-
-const width = window.innerWidth;
-const height = window.innerHeight;
-
-const renderPass = new THREE.RenderPass( scene, camera );
-composer.addPass( renderPass );
-
-// const ssaoPass = new THREE.SSAOPass( scene, camera, width, height );
-// ssaoPass.kernelRadius = 8;
-// composer.addPass( ssaoPass );
-
-outlinePass = new THREE.OutlinePass( new THREE.Vector2( window.innerWidth, window.innerHeight ), scene, camera );
-outlinePass.hiddenEdgeColor.set( '' );
-composer.addPass( outlinePass );
-
-// light
-const letThereBeLight = new THREE.AmbientLight( 0xFFFFFF , 10);
-
-const whiteAmbient = new THREE.AmbientLight( 0x808080 , 2); // white ambient
-scene.add( whiteAmbient );
-
-// front light
-const frontLight = new THREE.PointLight( 0xffffcc, 1.5, 50, 2 );
-frontLight.position.set( -1, 2.0, 1.8 );
-frontLight.castShadow = true;
-scene.add( frontLight );
-const frontLightHelper = new THREE.PointLightHelper( frontLight, 0.1 );
-
-//Set up shadow properties for the light
-frontLight.shadow.mapSize.width = 2048; // default
-frontLight.shadow.mapSize.height = 2048; // default
-frontLight.shadow.camera.near = 0.5; // default
-frontLight.shadow.camera.far = 100; // default
-frontLight.shadow.bias = -0.001;
-
-//Create a helper for the shadow camera (optional)
-// const frontLightShadowHelper = new THREE.CameraHelper( frontLight.shadow.camera );
-// scene.add( frontLightShadowHelper );
-
-// corridor light
-const corridorLight = new THREE.PointLight( 0xffffcc, 0.5, 50, 2 );
-corridorLight.position.set( 3.7, 2, -4.5 );
-corridorLight.castShadow = true;
-scene.add( corridorLight );
-const corridorLightHelper = new THREE.PointLightHelper( corridorLight, 0.1 );
-
-//Set up shadow properties for the light
-corridorLight.shadow.mapSize.width = 2048;
-corridorLight.shadow.mapSize.height = 2048;
-corridorLight.shadow.camera.near = 0.5; 
-corridorLight.shadow.camera.far = 100;
-corridorLight.shadow.bias = -0.001;
-
-//Create a helper for the shadow camera (optional)
-// const corridorLightShadowHelper = new THREE.CameraHelper( corridorLight.shadow.camera );
-// scene.add( corridorLightShadowHelper );
+    }
+    else {
+      obj.children.forEach(child => {
+        addCollisionChecking(child, boxes);
+      });
+    }
+  }
+  else {
+    boxes.push(new THREE.Box3().setFromObject(obj));
+    //biar bisa liat mana yang tidak bisa dilewati untuk debug
+    // scene.add(new THREE.Box3Helper( new THREE.Box3().setFromObject(obj), 0xeeeeee ));
+  }
+}
 
 // light flicker
 function corridorFlicker() {
-    if (Math.random() < 0.8) {
-        corridorLight.intensity = 0;
-    } else 
-        corridorLight.intensity = Math.random()
+  if (Math.random() < 0.8) {
+      corridorLight.intensity = 0;
+  } else 
+      corridorLight.intensity = Math.random()
 
-    setTimeout(corridorFlicker, Math.random() * 5000);
-}
-corridorFlicker()
-
-// clock
-const clock = new THREE.Clock();
-
-// control
-var cinematicMode = false;
-// const controls = new THREE.OrbitControls(camera, renderer.domElement);
-var controls = new THREE.PointerLockControls(camera, document.body);
-// controls.maxPolarAngle = Math.PI * 5 / 6;
-// controls.minPolarAngle = Math.PI * 1 / 6;
-
-var menu = document.getElementById('menu');
-document.body.addEventListener('click', function(e) {
-  if (!controls.isLocked) controls.lock();
-});
-
-controls.addEventListener( 'lock', function() {
-  menu.style.display = 'none';
-  setTimeout(animate, 1);
-});
-
-controls.addEventListener( 'unlock', function() {
-	menu.style.display = 'flex';
-});
-
-// camera path
-const path = new THREE.CurvePath();
-path.add(new THREE.LineCurve3(new THREE.Vector3(-3,1.8,0), new THREE.Vector3(-1,1.8,0)))
-path.add(new THREE.CubicBezierCurve3(new THREE.Vector3(-1,1.8,0), new THREE.Vector3(0,1.8,0), new THREE.Vector3(4,1.8,2.7), new THREE.Vector3(3.2,1.8,-1.3)))
-path.add(new THREE.CatmullRomCurve3([new THREE.Vector3(3.2,1.8,-1.3), new THREE.Vector3(2.5,1,-6.2), new THREE.Vector3(3,1.8,-8), new THREE.Vector3(1.4,1.8,-8.7)]))
-
-function showPathHelper(path) {
-  const points = path.getPoints();
-  const geometry = new THREE.BufferGeometry().setFromPoints( points );
-  const material = new THREE.LineBasicMaterial( { color: 0xffffff } );
-  const line = new THREE.Line( geometry, material );
-  scene.add( line );
-}
-// showPathHelper(path);
-
-var cinematicAction;
-function cinematicMove(path) {
-  const points = path.getPoints();
-  const timesArr = [];
-  const valuesArr = [];
-  for (let i = 0; i < points.length; i++) {
-    const element = points[i];
-    timesArr.push(i);
-    
-    valuesArr.push(element.x);
-    valuesArr.push(element.y);
-    valuesArr.push(element.z);
-  }
-  
-  const cn_posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateLinear);
-  const cinematicClip = new THREE.AnimationClip(null,timesArr[timesArr.length-1],[cn_posKFrame]);
-  cinematicAction = cameraMixer.clipAction(cinematicClip);
-  cinematicAction.setLoop(THREE.LoopPingPong,Infinity)
-}
-cinematicMove(path)
-
-let cinematic = false;
-function toggleCinematic() {
-  cinematic ^= 1;
-  if (!cinematic) {
-    cinematicAction.reset().play();
-  } else {
-    cinematicAction.stop();
-  }
+  setTimeout(corridorFlicker, Math.random() * 5000);
 }
 
-let debugMode = false;
-function toggleDebugMode(){
-  debugMode ^= 1;
-  if (debugMode){
-    document.body.appendChild( stats.dom );
-    document.getElementById('pos').style.display = 'block';
-    scene.add( frontLightHelper );
-    scene.add( corridorLightHelper );
-  } else {
-
-  }
-  toggleFPSCollisionBoxHelper()
+function CreateRotationAnimation(period, axis = 'x') {
+  const times = [0, period], values = [0, 360];
+  const trackName = '.rotation[' + axis + ']';
+  const track = new NumberKeyframeTrack(trackName, times, values);
+  return new AnimationClip(null, period, [track]);
 }
-
-let thereBeLight = false;
-function toggleLTBL() {
-  thereBeLight ^= 1;
-  if (thereBeLight) {
-    scene.add( letThereBeLight );
-  } else {
-    scene.remove(letThereBeLight);
-  }
-}
-
-document.body.addEventListener('keyup',(e) => {
-  if (e.key == 'F2') {
-    toggleCinematic();
-  } else if (e.key == 'F4'){
-    toggleDebugMode();
-  } else if (e.key == 'F8'){
-    toggleLTBL();
-  }
-})
-
-//init raycasting
-var raycaster = new THREE.Raycaster();
-var pointer = new THREE.Vector2();
-var objectHoverHelper;
-var hoveredObject;
-// set pointer location to center of the window
-pointer.x = 0;
-pointer.y = 0;
-function raycasting() {
-  raycaster.setFromCamera(pointer, camera);
-  const intersects = raycaster.intersectObjects(scene.children);
-  // console.log('intersects:',intersects);
-  // scene.remove(scene.getObjectByName("objectHoverHelper"));
-  outlinePass.selectedObjects = [];
-  hoveredObject = null;
-  for (let i = 0; i < intersects.length; i++) {
-    if (intersects[i].object.name == "objectHoverHelper") continue;
-    if (
-      !intersects[i].object.name.startsWith("hoverable")
-    ) continue;
-
-    hoveredObject = intersects[i];
-    // console.log('hoveredObject:',hoveredObject);
-
-    // objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
-    // objectHoverHelper.name = "objectHoverHelper";
-    // scene.add(objectHoverHelper);
-    
-    outlinePass.selectedObjects = [intersects[i].object];
-    break;
-  }
-}
-
-// loader
-const loader = new THREE.GLTFLoader();
-
-var animationMixer; // TODO: clean this mixer
-
-// Load obj
-loadModels();
-
-// Load wall for collision checking
-let wall = new THREE.Mesh( new THREE.BoxGeometry(10, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(0, 1, 2);
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(-1, 1, -1.85);
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(2, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(1.2, 1, -7.85);
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(1.2, 1, -9.45);
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(10, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(-3.72, 1, 0);
-wall.rotation.y = 90 * Math.PI / 180
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(15, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(3.90, 1, -4.5);
-wall.rotation.y = 90 * Math.PI / 180
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(6, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(2.28, 1, -4.85);
-wall.rotation.y = 90 * Math.PI / 180
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-wall = new THREE.Mesh( new THREE.BoxGeometry(2.5, 3, 0), new THREE.MeshStandardMaterial( { color: 0x00ff00 } ) );
-wall.position.set(0, 1, -8.71);
-wall.rotation.y = 90 * Math.PI / 180
-addCollisionChecking(wall, collisionBoxes, true);
-// scene.add(wall);
-
-// ----- Story -------
-var story_state = 0
-// 0: init
-// 1: checked in
-// 2: looked at keyhole 1
-// 3: rested
-// 4: looked at keyhole 2
-// 5: talked to woman (end)
-
-function animate() {
-  setTimeout(() => {
-    if (controls.isLocked) requestAnimationFrame( animate );
-  }, 1000/60);
-  const delta = clock.getDelta();
-  for ( const mixer of mixers ) mixer.update( delta );
-  stats.update();
-  raycasting();
-  animateControls(camera, controls, collisionBoxes);
-  activateCameraBobbingWhenMoving();
-  updateDebugScreen()
-  // renderer.render(scene, camera);
-  composer.render();
-}
-initFPSControls(document.body, scene, camera);
-// animate();
-
-
-// Function land /////////////////////////////////////////////////////////////
 
 function peepKeyhole(time) {
   const campos = camera.position;
@@ -905,9 +909,6 @@ document.body.addEventListener('click', function(e) {
     // if (lastObj.animations.length > 0) animateObject(lastObj);
   }
 })
-
-// on resize
-window.addEventListener('resize', onWindowResize);
 
 function rotateWomanToCamera() {
   woman.lookAt(new THREE.Vector3(camera.position.x, woman.position.y, camera.position.z))
