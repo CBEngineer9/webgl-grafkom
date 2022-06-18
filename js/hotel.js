@@ -127,7 +127,7 @@ path.add(new THREE.LineCurve3(new THREE.Vector3(-3,1.8,0), new THREE.Vector3(-1,
 path.add(new THREE.CubicBezierCurve3(new THREE.Vector3(-1,1.8,0), new THREE.Vector3(0,1.8,0), new THREE.Vector3(4,1.8,2.7), new THREE.Vector3(3.2,1.8,-1.3)))
 path.add(new THREE.CatmullRomCurve3([new THREE.Vector3(3.2,1.8,-1.3), new THREE.Vector3(2.5,1,-6.2), new THREE.Vector3(3,1.8,-8), new THREE.Vector3(1.4,1.8,-8.7)]))
 
-// showPathHelper(path);
+const pathHelper = generatePathHelper(path);
 
 var cinematicAction;
 cinematicMove(path)
@@ -293,8 +293,13 @@ function toggleDebugMode(){
     document.getElementById('pos').style.display = 'block';
     scene.add( frontLightHelper );
     scene.add( corridorLightHelper );
+    scene.add(pathHelper);
   } else {
-
+    document.body.removeChild(stats.dom);
+    document.getElementById('pos').style.display = 'none';
+    scene.remove( frontLightHelper );
+    scene.remove( corridorLightHelper );
+    scene.remove(pathHelper);
   }
   toggleFPSCollisionBoxHelper()
 }
@@ -327,12 +332,11 @@ function cinematicMove(path) {
   cinematicAction.setLoop(THREE.LoopPingPong,Infinity)
 }
 
-function showPathHelper(path) {
+function generatePathHelper(path) {
   const points = path.getPoints();
   const geometry = new THREE.BufferGeometry().setFromPoints( points );
   const material = new THREE.LineBasicMaterial( { color: 0xffffff } );
-  const line = new THREE.Line( geometry, material );
-  scene.add( line );
+  return new THREE.Line( geometry, material );
 }
 
 /**
