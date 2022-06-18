@@ -4,250 +4,6 @@ var action_woman;
 var woman;
 const mixers = []; // mixers array
 
-
-// scene
-const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x000000,0.1,20)
-const sceneMixer = new THREE.AnimationMixer(scene);
-mixers.push(sceneMixer);
-
-// camera
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
-camera.position.set( -3, 2, 0 );
-camera.lookAt( 0, 1.8, 0 );
-
-// mixer for camera
-const cameraMixer = new THREE.AnimationMixer(camera);
-mixers.push(cameraMixer);
-
-// renderer
-const renderer = new THREE.WebGLRenderer();
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFShadowMap; // default THREE.PCFShadowMap
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-// post processing composer
-const composer = new THREE.EffectComposer( renderer );
-
-const width = window.innerWidth;
-const height = window.innerHeight;
-const ssaoPass = new THREE.SSAOPass( scene, camera, width, height );
-ssaoPass.kernelRadius = 8;
-composer.addPass( ssaoPass );
-
-// light
-const letThereBeLight = new THREE.PointLight( 0xffff55, 10, 100 );
-letThereBeLight.position.set( -5, 5, 0 );
-// scene.add( letThereBeLight );
-const sphereSize = 1;
-const pointLightHelper = new THREE.PointLightHelper( letThereBeLight, sphereSize );
-scene.add( pointLightHelper );
-
-const whiteAmbient = new THREE.AmbientLight( 0x808080 , 2); // white ambient
-scene.add( whiteAmbient );
-
-// spotlight 1
-// const spotLight = new THREE.SpotLight( 0xffffcc );
-// spotLight.position.set( -1, 2.0, 1.9 );
-// spotLight.castShadow = true;
-// scene.add( spotLight );
-
-// spotLight.target.position.set(-1, 5, 1.9);
-// scene.add( spotLight.target );
-
-// const spotLightHelper = new THREE.SpotLightHelper( spotLight );
-// spotLightHelper.update();
-// scene.add( spotLightHelper );
-
-// front light
-const frontLight = new THREE.PointLight( 0xffffcc, 1.5, 50, 2 );
-frontLight.position.set( -1, 2.0, 1.8 );
-frontLight.castShadow = true;
-scene.add( frontLight );
-const frontLightHelper = new THREE.PointLightHelper( frontLight, 0.1 );
-scene.add( frontLightHelper );
-
-//Set up shadow properties for the light
-frontLight.shadow.mapSize.width = 2048; // default
-frontLight.shadow.mapSize.height = 2048; // default
-frontLight.shadow.camera.near = 0.5; // default
-frontLight.shadow.camera.far = 100; // default
-frontLight.shadow.bias = -0.001;
-
-//Create a helper for the shadow camera (optional)
-// const frontLightShadowHelper = new THREE.CameraHelper( frontLight.shadow.camera );
-// scene.add( frontLightShadowHelper );
-
-// corridor light
-const corridorLight = new THREE.PointLight( 0xffffcc, 0.5, 50, 2 );
-corridorLight.position.set( 3.7, 2, -4.5 );
-corridorLight.castShadow = true;
-scene.add( corridorLight );
-const corridorLightHelper = new THREE.PointLightHelper( corridorLight, 0.1 );
-scene.add( corridorLightHelper );
-
-//Set up shadow properties for the light
-corridorLight.shadow.mapSize.width = 2048;
-corridorLight.shadow.mapSize.height = 2048;
-corridorLight.shadow.camera.near = 0.5; 
-corridorLight.shadow.camera.far = 100;
-corridorLight.shadow.bias = -0.001;
-
-//Create a helper for the shadow camera (optional)
-// const corridorLightShadowHelper = new THREE.CameraHelper( corridorLight.shadow.camera );
-// scene.add( corridorLightShadowHelper );
-
-// light flicker
-// const timesArr = [0, 2.5, 3, 4.1, 4.3, 4.5, 5];
-// const valuesArr = [0, 0.2, 0, 0.1, 0, 0.5, 0];
-// const flickerKFrame = new THREE.NumberKeyframeTrack('.intensity',timesArr,valuesArr, THREE.InterpolateDiscrete);
-// const flickerClip = new THREE.AnimationClip(null,5,[flickerKFrame]);
-// const corridorFlickerMixer = new THREE.AnimationMixer(corridorLight);
-// const action = corridorFlickerMixer.clipAction(flickerClip);
-// action.setLoop(THREE.LoopRepeat, Infinity)
-// action.play();
-// console.log('flickerClip:',flickerClip);
-// console.log('action:',action);
-// mixers.push(corridorFlickerMixer);
-
-function corridorFlicker() {
-    if (Math.random() < 0.8) {
-        corridorLight.intensity = 0;
-    } else 
-        corridorLight.intensity = Math.random()
-
-    setTimeout(corridorFlicker, Math.random() * 5000);
-}
-corridorFlicker()
-
-// clock
-const clock = new THREE.Clock();
-
-// control
-var cinematicMode = false;
-// const controls = new THREE.OrbitControls(camera, renderer.domElement);
-var controls = new THREE.PointerLockControls(camera, document.body);
-// controls.maxPolarAngle = Math.PI * 5 / 6;
-// controls.minPolarAngle = Math.PI * 1 / 6;
-
-var menu = document.getElementById('menu');
-document.body.addEventListener('click', function(e) {
-  if (!controls.isLocked) controls.lock();
-});
-
-controls.addEventListener( 'lock', function() {
-  menu.style.display = 'none';
-  setTimeout(animate, 1);
-});
-
-controls.addEventListener( 'unlock', function() {
-	menu.style.display = 'flex';
-});
-
-// camera path
-const path = new THREE.CurvePath();
-path.add(new THREE.LineCurve3(new THREE.Vector3(-3,1.8,0), new THREE.Vector3(-1,1.8,0)))
-path.add(new THREE.CubicBezierCurve3(new THREE.Vector3(-1,1.8,0), new THREE.Vector3(0,1.8,0), new THREE.Vector3(4,1.8,2.7), new THREE.Vector3(3.2,1.8,-1.3)))
-path.add(new THREE.CatmullRomCurve3([new THREE.Vector3(3.2,1.8,-1.3), new THREE.Vector3(2.5,1,-6.2), new THREE.Vector3(3,1.8,-8), new THREE.Vector3(1.4,1.8,-8.7)]))
-
-function showPathHelper(path) {
-  const points = path.getPoints();
-  const geometry = new THREE.BufferGeometry().setFromPoints( points );
-  const material = new THREE.LineBasicMaterial( { color: 0xffffff } );
-  const line = new THREE.Line( geometry, material );
-  scene.add( line );
-}
-// showPathHelper(path);
-
-function cinematicMove(path) {
-  const points = path.getPoints();
-  const timesArr = [];
-  const valuesArr = [];
-  for (let i = 0; i < points.length; i++) {
-    const element = points[i];
-    timesArr.push(i);
-    
-    valuesArr.push(element.x);
-    valuesArr.push(element.y);
-    valuesArr.push(element.z);
-  }
-  
-  const cn_posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateLinear);
-  const cinematicClip = new THREE.AnimationClip(null,timesArr[timesArr.length-1],[cn_posKFrame]);
-  const action = cameraMixer.clipAction(cinematicClip);
-  action.play();
-}
-// cinematicMove(path)
-
-//init raycasting
-var raycaster = new THREE.Raycaster();
-var pointer = new THREE.Vector2();
-var objectHoverHelper;
-var hoveredObject;
-// var objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(mesh), 0xffff00 );
-// set pointer location to center of the window
-pointer.x = 0;
-pointer.y = 0;
-
-// loader
-const loader = new THREE.GLTFLoader();
-
-var animationMixer; // TODO: clean this mixer
-
-// Load obj
-loadModels();
-// load wall
-loadWall(false);
-
-
-// ----- Story -------
-var story_state = 0
-// 0: init
-// 1: checked in
-// 2: looked at keyhole 1
-// 3: rested
-// 4: looked at keyhole 2
-// 5: talked to woman (end)
-initFPSControls(document.body, scene, camera);
-// animate();
-
-
-// Function land /////////////////////////////////////////////////////////////
-
-function animate() {
-  if (controls.isLocked) requestAnimationFrame( animate );
-  const delta = clock.getDelta();
-  for ( const mixer of mixers ) mixer.update( delta );
-  raycasting();
-  animateControls(camera, controls, collisionBoxes);
-  activateCameraBobbingWhenMoving();
-//   spotLightHelper.update();
-  updateDebugScreen()
-  renderer.render(scene, camera);
-  // composer.render();
-}
-
-function raycasting() {
-  raycaster.setFromCamera(pointer, camera);
-  const intersects = raycaster.intersectObjects(scene.children);
-  // console.log('intersects:',intersects);
-  scene.remove(scene.getObjectByName("objectHoverHelper"));
-  hoveredObject = null;
-  for (let i = 0; i < intersects.length; i++) {
-    if (intersects[i].object.name == "objectHoverHelper") continue;
-    if (
-      !intersects[i].object.name.startsWith("hoverable")
-    ) continue;
-    objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
-    objectHoverHelper.name = "objectHoverHelper";
-    hoveredObject = intersects[i];
-    // console.log('hoveredObject:',hoveredObject);
-    scene.add(objectHoverHelper);
-    break;
-  }
-}
-
 // collision checking
 function addCollisionChecking(obj, boxes, isSimple = false) {
   if (!isSimple) {
@@ -584,6 +340,249 @@ function loadGhost(callback){
     }
   );
 }
+
+
+// scene
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x000000,0.1,20)
+const sceneMixer = new THREE.AnimationMixer(scene);
+mixers.push(sceneMixer);
+
+// camera
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
+camera.position.set( -3, 2, 0 );
+camera.lookAt( 0, 1.8, 0 );
+
+// mixer for camera
+const cameraMixer = new THREE.AnimationMixer(camera);
+mixers.push(cameraMixer);
+
+// renderer
+const renderer = new THREE.WebGLRenderer();
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap; // default THREE.PCFShadowMap
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// post processing composer
+const composer = new THREE.EffectComposer( renderer );
+
+const width = window.innerWidth;
+const height = window.innerHeight;
+const ssaoPass = new THREE.SSAOPass( scene, camera, width, height );
+ssaoPass.kernelRadius = 8;
+composer.addPass( ssaoPass );
+
+// light
+const letThereBeLight = new THREE.PointLight( 0xffff55, 10, 100 );
+letThereBeLight.position.set( -5, 5, 0 );
+// scene.add( letThereBeLight );
+const sphereSize = 1;
+const pointLightHelper = new THREE.PointLightHelper( letThereBeLight, sphereSize );
+scene.add( pointLightHelper );
+
+const whiteAmbient = new THREE.AmbientLight( 0x808080 , 2); // white ambient
+scene.add( whiteAmbient );
+
+// spotlight 1
+// const spotLight = new THREE.SpotLight( 0xffffcc );
+// spotLight.position.set( -1, 2.0, 1.9 );
+// spotLight.castShadow = true;
+// scene.add( spotLight );
+
+// spotLight.target.position.set(-1, 5, 1.9);
+// scene.add( spotLight.target );
+
+// const spotLightHelper = new THREE.SpotLightHelper( spotLight );
+// spotLightHelper.update();
+// scene.add( spotLightHelper );
+
+// front light
+const frontLight = new THREE.PointLight( 0xffffcc, 1.5, 50, 2 );
+frontLight.position.set( -1, 2.0, 1.8 );
+frontLight.castShadow = true;
+scene.add( frontLight );
+const frontLightHelper = new THREE.PointLightHelper( frontLight, 0.1 );
+scene.add( frontLightHelper );
+
+//Set up shadow properties for the light
+frontLight.shadow.mapSize.width = 2048; // default
+frontLight.shadow.mapSize.height = 2048; // default
+frontLight.shadow.camera.near = 0.5; // default
+frontLight.shadow.camera.far = 100; // default
+frontLight.shadow.bias = -0.001;
+
+//Create a helper for the shadow camera (optional)
+// const frontLightShadowHelper = new THREE.CameraHelper( frontLight.shadow.camera );
+// scene.add( frontLightShadowHelper );
+
+// corridor light
+const corridorLight = new THREE.PointLight( 0xffffcc, 0.5, 50, 2 );
+corridorLight.position.set( 3.7, 2, -4.5 );
+corridorLight.castShadow = true;
+scene.add( corridorLight );
+const corridorLightHelper = new THREE.PointLightHelper( corridorLight, 0.1 );
+scene.add( corridorLightHelper );
+
+//Set up shadow properties for the light
+corridorLight.shadow.mapSize.width = 2048;
+corridorLight.shadow.mapSize.height = 2048;
+corridorLight.shadow.camera.near = 0.5; 
+corridorLight.shadow.camera.far = 100;
+corridorLight.shadow.bias = -0.001;
+
+//Create a helper for the shadow camera (optional)
+// const corridorLightShadowHelper = new THREE.CameraHelper( corridorLight.shadow.camera );
+// scene.add( corridorLightShadowHelper );
+
+// light flicker
+// const timesArr = [0, 2.5, 3, 4.1, 4.3, 4.5, 5];
+// const valuesArr = [0, 0.2, 0, 0.1, 0, 0.5, 0];
+// const flickerKFrame = new THREE.NumberKeyframeTrack('.intensity',timesArr,valuesArr, THREE.InterpolateDiscrete);
+// const flickerClip = new THREE.AnimationClip(null,5,[flickerKFrame]);
+// const corridorFlickerMixer = new THREE.AnimationMixer(corridorLight);
+// const action = corridorFlickerMixer.clipAction(flickerClip);
+// action.setLoop(THREE.LoopRepeat, Infinity)
+// action.play();
+// console.log('flickerClip:',flickerClip);
+// console.log('action:',action);
+// mixers.push(corridorFlickerMixer);
+
+function corridorFlicker() {
+    if (Math.random() < 0.8) {
+        corridorLight.intensity = 0;
+    } else 
+        corridorLight.intensity = Math.random()
+
+    setTimeout(corridorFlicker, Math.random() * 5000);
+}
+corridorFlicker()
+
+// clock
+const clock = new THREE.Clock();
+
+// control
+var cinematicMode = false;
+// const controls = new THREE.OrbitControls(camera, renderer.domElement);
+var controls = new THREE.PointerLockControls(camera, document.body);
+// controls.maxPolarAngle = Math.PI * 5 / 6;
+// controls.minPolarAngle = Math.PI * 1 / 6;
+
+var menu = document.getElementById('menu');
+document.body.addEventListener('click', function(e) {
+  if (!controls.isLocked) controls.lock();
+});
+
+controls.addEventListener( 'lock', function() {
+  menu.style.display = 'none';
+  setTimeout(animate, 1);
+});
+
+controls.addEventListener( 'unlock', function() {
+	menu.style.display = 'flex';
+});
+
+// camera path
+const path = new THREE.CurvePath();
+path.add(new THREE.LineCurve3(new THREE.Vector3(-3,1.8,0), new THREE.Vector3(-1,1.8,0)))
+path.add(new THREE.CubicBezierCurve3(new THREE.Vector3(-1,1.8,0), new THREE.Vector3(0,1.8,0), new THREE.Vector3(4,1.8,2.7), new THREE.Vector3(3.2,1.8,-1.3)))
+path.add(new THREE.CatmullRomCurve3([new THREE.Vector3(3.2,1.8,-1.3), new THREE.Vector3(2.5,1,-6.2), new THREE.Vector3(3,1.8,-8), new THREE.Vector3(1.4,1.8,-8.7)]))
+
+function showPathHelper(path) {
+  const points = path.getPoints();
+  const geometry = new THREE.BufferGeometry().setFromPoints( points );
+  const material = new THREE.LineBasicMaterial( { color: 0xffffff } );
+  const line = new THREE.Line( geometry, material );
+  scene.add( line );
+}
+// showPathHelper(path);
+
+function cinematicMove(path) {
+  const points = path.getPoints();
+  const timesArr = [];
+  const valuesArr = [];
+  for (let i = 0; i < points.length; i++) {
+    const element = points[i];
+    timesArr.push(i);
+    
+    valuesArr.push(element.x);
+    valuesArr.push(element.y);
+    valuesArr.push(element.z);
+  }
+  
+  const cn_posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateLinear);
+  const cinematicClip = new THREE.AnimationClip(null,timesArr[timesArr.length-1],[cn_posKFrame]);
+  const action = cameraMixer.clipAction(cinematicClip);
+  action.play();
+}
+// cinematicMove(path)
+
+//init raycasting
+var raycaster = new THREE.Raycaster();
+var pointer = new THREE.Vector2();
+var objectHoverHelper;
+var hoveredObject;
+// var objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(mesh), 0xffff00 );
+// set pointer location to center of the window
+pointer.x = 0;
+pointer.y = 0;
+function raycasting() {
+  raycaster.setFromCamera(pointer, camera);
+  const intersects = raycaster.intersectObjects(scene.children);
+  // console.log('intersects:',intersects);
+  scene.remove(scene.getObjectByName("objectHoverHelper"));
+  hoveredObject = null;
+  for (let i = 0; i < intersects.length; i++) {
+    if (intersects[i].object.name == "objectHoverHelper") continue;
+    if (
+      !intersects[i].object.name.startsWith("hoverable")
+    ) continue;
+    objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
+    objectHoverHelper.name = "objectHoverHelper";
+    hoveredObject = intersects[i];
+    // console.log('hoveredObject:',hoveredObject);
+    scene.add(objectHoverHelper);
+    break;
+  }
+}
+
+// loader
+const loader = new THREE.GLTFLoader();
+
+var animationMixer; // TODO: clean this mixer
+
+// Load obj
+loadModels();
+// load wall
+loadWall(false);
+
+
+// ----- Story -------
+var story_state = 0
+// 0: init
+// 1: checked in
+// 2: looked at keyhole 1
+// 3: rested
+// 4: looked at keyhole 2
+// 5: talked to woman (end)
+
+function animate() {
+  if (controls.isLocked) requestAnimationFrame( animate );
+  const delta = clock.getDelta();
+  for ( const mixer of mixers ) mixer.update( delta );
+  raycasting();
+  animateControls(camera, controls, collisionBoxes);
+  activateCameraBobbingWhenMoving();
+//   spotLightHelper.update();
+  updateDebugScreen()
+  renderer.render(scene, camera);
+  // composer.render();
+}
+initFPSControls(document.body, scene, camera);
+// animate();
+
+
+// Function land /////////////////////////////////////////////////////////////
 
 function peepKeyhole(time) {
   const campos = camera.position;
