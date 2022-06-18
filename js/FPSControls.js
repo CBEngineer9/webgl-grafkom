@@ -31,7 +31,7 @@ function initFPSControls(domElement, scene, camera) {
   FPSCollisionBoxHelper = new THREE.Box3Helper( FPSCollisionBox );
   scene.add(FPSCollisionBoxHelper);
   //comment this to disable collision helper
-  // toggleFPSCollisionBoxHelper();
+  toggleFPSCollisionBoxHelper();
 }
 
 function toggleFPSCollisionBoxHelper() {

@@ -57,6 +57,7 @@ function traverseThroughChildrenAndGiveName(obj, name) {
 
 const doorAction = []
 var action_woman;
+var action_table;
 var woman;
 
 function loadModels() {
@@ -203,16 +204,23 @@ function loadModels() {
       // traverseThroughChildrenAndGiveName(gltf.scene, "hoverable");
       
       gltf.scene.rotation.y = -Math.PI * 0.4;
-      gltf.scene.position.set(0.1, 0, -0.65);
+      gltf.scene.position.set(0.1, 0.1, -0.65);
       gltf.scene.scale.set(0.0111, 0.0111, 0.0111);
       gltf.scene.children[0].name = "hoverable_woman";
       console.log('gltf.scene:',gltf.scene);
       console.log(dumpObject(gltf.scene));
 
+      gltf.scene.traverse( function ( child ) {
+        if ( child.isObject3D ) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      } );
+
       // const geometry = new THREE.SphereGeometry( 32, 32, 16 );
       // const geometry = new THREE.BoxGeometry( 0.7, 1.7, 0.7 );
       const geometry = new THREE.BoxGeometry( 70, 160, 70 );
-      const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true } );
+      const material = new THREE.MeshBasicMaterial( { color: 0xffff00, wireframe: true, transparent:true, opacity:0 } );
       const box = new THREE.Mesh( geometry, material );
       box.position.set(0, 100, 0)
       box.name = 'hoverable_woman';
@@ -223,8 +231,9 @@ function loadModels() {
       const mixerWoman = new THREE.AnimationMixer(gltf.scene)
       action_woman = mixerWoman.clipAction(clips[0])
       mixers.push(mixerWoman)
+      action_woman.reset().play()
 
-      // addCollisionChecking(gltf.scene, collisionBoxes, true);
+      addCollisionChecking(gltf.scene, collisionBoxes, true);
       scene.add( gltf.scene );
       woman = gltf.scene;
     },
@@ -245,14 +254,20 @@ function loadModels() {
       gltf.cameras; // Array<THREE.Camera>
       gltf.asset; // Object
 
-      traverseThroughChildrenAndGiveName(gltf.scene, "hoverable");
+      traverseThroughChildrenAndGiveName(gltf.scene, "hoverable_table");
       
       gltf.scene.rotation.y = Math.PI / 2;
       gltf.scene.animations = gltf.animations;
       gltf.scene.position.set(-0.65, 0, -0.65);
       gltf.scene.scale.set(0.25, 0.25, 0.25);
-      // gltf.scene.name = "hoverable";
       console.log('gltf.scene:',gltf.scene);
+
+      gltf.scene.animations = gltf.animations;
+      const clips = gltf.animations;
+      const mixerTable = new THREE.AnimationMixer(gltf.scene)
+      action_table = mixerTable.clipAction(clips[0])
+      mixers.push(mixerTable)
+      // action_table.reset().play();
 
       addCollisionChecking(gltf.scene, collisionBoxes, true);
       scene.add( gltf.scene );
@@ -326,38 +341,31 @@ renderer.shadowMap.type = THREE.PCFShadowMap; // default THREE.PCFShadowMap
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// stats
+const stats = new Stats();
+
 // post processing composer
 const composer = new THREE.EffectComposer( renderer );
 
 const width = window.innerWidth;
 const height = window.innerHeight;
-const ssaoPass = new THREE.SSAOPass( scene, camera, width, height );
-ssaoPass.kernelRadius = 8;
-composer.addPass( ssaoPass );
+
+const renderPass = new THREE.RenderPass( scene, camera );
+composer.addPass( renderPass );
+
+// const ssaoPass = new THREE.SSAOPass( scene, camera, width, height );
+// ssaoPass.kernelRadius = 8;
+// composer.addPass( ssaoPass );
+
+outlinePass = new THREE.OutlinePass( new THREE.Vector2( window.innerWidth, window.innerHeight ), scene, camera );
+outlinePass.hiddenEdgeColor.set( '' );
+composer.addPass( outlinePass );
 
 // light
-const letThereBeLight = new THREE.PointLight( 0xffff55, 10, 100 );
-letThereBeLight.position.set( -5, 5, 0 );
-// scene.add( letThereBeLight );
-const sphereSize = 1;
-const pointLightHelper = new THREE.PointLightHelper( letThereBeLight, sphereSize );
-scene.add( pointLightHelper );
+const letThereBeLight = new THREE.AmbientLight( 0xFFFFFF , 10);
 
 const whiteAmbient = new THREE.AmbientLight( 0x808080 , 2); // white ambient
 scene.add( whiteAmbient );
-
-// spotlight 1
-// const spotLight = new THREE.SpotLight( 0xffffcc );
-// spotLight.position.set( -1, 2.0, 1.9 );
-// spotLight.castShadow = true;
-// scene.add( spotLight );
-
-// spotLight.target.position.set(-1, 5, 1.9);
-// scene.add( spotLight.target );
-
-// const spotLightHelper = new THREE.SpotLightHelper( spotLight );
-// spotLightHelper.update();
-// scene.add( spotLightHelper );
 
 // front light
 const frontLight = new THREE.PointLight( 0xffffcc, 1.5, 50, 2 );
@@ -365,7 +373,6 @@ frontLight.position.set( -1, 2.0, 1.8 );
 frontLight.castShadow = true;
 scene.add( frontLight );
 const frontLightHelper = new THREE.PointLightHelper( frontLight, 0.1 );
-scene.add( frontLightHelper );
 
 //Set up shadow properties for the light
 frontLight.shadow.mapSize.width = 2048; // default
@@ -384,7 +391,6 @@ corridorLight.position.set( 3.7, 2, -4.5 );
 corridorLight.castShadow = true;
 scene.add( corridorLight );
 const corridorLightHelper = new THREE.PointLightHelper( corridorLight, 0.1 );
-scene.add( corridorLightHelper );
 
 //Set up shadow properties for the light
 corridorLight.shadow.mapSize.width = 2048;
@@ -398,18 +404,6 @@ corridorLight.shadow.bias = -0.001;
 // scene.add( corridorLightShadowHelper );
 
 // light flicker
-// const timesArr = [0, 2.5, 3, 4.1, 4.3, 4.5, 5];
-// const valuesArr = [0, 0.2, 0, 0.1, 0, 0.5, 0];
-// const flickerKFrame = new THREE.NumberKeyframeTrack('.intensity',timesArr,valuesArr, THREE.InterpolateDiscrete);
-// const flickerClip = new THREE.AnimationClip(null,5,[flickerKFrame]);
-// const corridorFlickerMixer = new THREE.AnimationMixer(corridorLight);
-// const action = corridorFlickerMixer.clipAction(flickerClip);
-// action.setLoop(THREE.LoopRepeat, Infinity)
-// action.play();
-// console.log('flickerClip:',flickerClip);
-// console.log('action:',action);
-// mixers.push(corridorFlickerMixer);
-
 function corridorFlicker() {
     if (Math.random() < 0.8) {
         corridorLight.intensity = 0;
@@ -459,6 +453,7 @@ function showPathHelper(path) {
 }
 // showPathHelper(path);
 
+var cinematicAction;
 function cinematicMove(path) {
   const points = path.getPoints();
   const timesArr = [];
@@ -474,17 +469,60 @@ function cinematicMove(path) {
   
   const cn_posKFrame = new THREE.VectorKeyframeTrack('.position',timesArr,valuesArr, THREE.InterpolateLinear);
   const cinematicClip = new THREE.AnimationClip(null,timesArr[timesArr.length-1],[cn_posKFrame]);
-  const action = cameraMixer.clipAction(cinematicClip);
-  action.play();
+  cinematicAction = cameraMixer.clipAction(cinematicClip);
+  cinematicAction.setLoop(THREE.LoopPingPong,Infinity)
 }
-// cinematicMove(path)
+cinematicMove(path)
+
+let cinematic = false;
+function toggleCinematic() {
+  cinematic ^= 1;
+  if (!cinematic) {
+    cinematicAction.reset().play();
+  } else {
+    cinematicAction.stop();
+  }
+}
+
+let debugMode = false;
+function toggleDebugMode(){
+  debugMode ^= 1;
+  if (debugMode){
+    document.body.appendChild( stats.dom );
+    document.getElementById('pos').style.display = 'block';
+    scene.add( frontLightHelper );
+    scene.add( corridorLightHelper );
+  } else {
+
+  }
+  toggleFPSCollisionBoxHelper()
+}
+
+let thereBeLight = false;
+function toggleLTBL() {
+  thereBeLight ^= 1;
+  if (thereBeLight) {
+    scene.add( letThereBeLight );
+  } else {
+    scene.remove(letThereBeLight);
+  }
+}
+
+document.body.addEventListener('keyup',(e) => {
+  if (e.key == 'F2') {
+    toggleCinematic();
+  } else if (e.key == 'F4'){
+    toggleDebugMode();
+  } else if (e.key == 'F8'){
+    toggleLTBL();
+  }
+})
 
 //init raycasting
 var raycaster = new THREE.Raycaster();
 var pointer = new THREE.Vector2();
 var objectHoverHelper;
 var hoveredObject;
-// var objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(mesh), 0xffff00 );
 // set pointer location to center of the window
 pointer.x = 0;
 pointer.y = 0;
@@ -492,18 +530,23 @@ function raycasting() {
   raycaster.setFromCamera(pointer, camera);
   const intersects = raycaster.intersectObjects(scene.children);
   // console.log('intersects:',intersects);
-  scene.remove(scene.getObjectByName("objectHoverHelper"));
+  // scene.remove(scene.getObjectByName("objectHoverHelper"));
+  outlinePass.selectedObjects = [];
   hoveredObject = null;
   for (let i = 0; i < intersects.length; i++) {
     if (intersects[i].object.name == "objectHoverHelper") continue;
     if (
       !intersects[i].object.name.startsWith("hoverable")
     ) continue;
-    objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
-    objectHoverHelper.name = "objectHoverHelper";
+
     hoveredObject = intersects[i];
     // console.log('hoveredObject:',hoveredObject);
-    scene.add(objectHoverHelper);
+
+    // objectHoverHelper = new THREE.Box3Helper( new THREE.Box3().setFromObject(intersects[i].object), 0xeeeeee );
+    // objectHoverHelper.name = "objectHoverHelper";
+    // scene.add(objectHoverHelper);
+    
+    outlinePass.selectedObjects = [intersects[i].object];
     break;
   }
 }
@@ -571,16 +614,18 @@ var story_state = 0
 // 5: talked to woman (end)
 
 function animate() {
-  if (controls.isLocked) requestAnimationFrame( animate );
+  setTimeout(() => {
+    if (controls.isLocked) requestAnimationFrame( animate );
+  }, 1000/60);
   const delta = clock.getDelta();
   for ( const mixer of mixers ) mixer.update( delta );
+  stats.update();
   raycasting();
   animateControls(camera, controls, collisionBoxes);
   activateCameraBobbingWhenMoving();
-//   spotLightHelper.update();
   updateDebugScreen()
-  renderer.render(scene, camera);
-  // composer.render();
+  // renderer.render(scene, camera);
+  composer.render();
 }
 initFPSControls(document.body, scene, camera);
 // animate();
@@ -593,18 +638,9 @@ function peepKeyhole(time) {
   const apexpos = new THREE.Vector3(3, 0.975, -6.27);
   const keypos = new THREE.Vector3(2.24, 0.975, -6.27);
 
-  // const points = path.getPoints();
-  const timesArr = [0, 2, 4, 6];
+  const timesArr = [0, 4, 6, 10];
   const valuesArr = [];
 
-  // for (let i = 0; i < points.length; i++) {
-  //   const element = points[i];
-  //   timesArr.push(i);
-    
-  //   valuesArr.push(element.x);
-  //   valuesArr.push(element.y);
-  //   valuesArr.push(element.z);
-  // }
   campos.toArray(valuesArr,valuesArr.length)
   apexpos.toArray(valuesArr,valuesArr.length)
   keypos.toArray(valuesArr,valuesArr.length)
@@ -702,11 +738,14 @@ function changeScene() {
   setTimeout(function() {
       // Your real code should go here. I've added something
       // just to demonstrate the change
+      camera.position.x = 0.81;
+      camera.position.y = 1.7;
+      camera.position.z = -8.6;
+      camera.rotateY(Math.PI)
 
   }, 1000);
 };
 
-// let exposition_mode = false;
 let intro = false; // TODO: cut for memory?
 let introTicker = 0;
 let outro = false; // TODO: cut for memory?
@@ -714,7 +753,7 @@ let outroTicker = 0;
 document.body.addEventListener('click', function(e) {
   if (intro){
     const dialogBox = document.getElementById('dialog')
-    if (introTicker == 0){
+    if (introTicker == 0) {
       dialogBox.textContent = "Yes. Room for 1 please."
       dialogBox.style.color = "white";
     } else if (introTicker == 1) {
@@ -734,7 +773,7 @@ document.body.addEventListener('click', function(e) {
       dialogBox.classList.remove('fadeout');
       dialogBox.offsetWidth;
       dialogBox.classList.add('fadeout');
-      
+
       woman.rotation.y = - Math.PI * 0.4 ;
       woman.updateMatrix();
 
@@ -759,27 +798,36 @@ document.body.addEventListener('click', function(e) {
     } else if (outroTicker == 3) {
       dialogBox.textContent = "A long time ago, a man murdered his wife in there, and we find that even now, whoever stays there gets very uncomfortable.";
       dialogBox.style.color = "pink";
+      setInterval(() => {
+        if (camera.fov > 10) {
+          camera.fov -= 0.2;
+        }
+      }, 10);
     } else if (outroTicker == 4) {
       dialogBox.textContent = "But these people were not ordinary.";
       dialogBox.style.color = "pink";
     } else if (outroTicker == 5) {
-      dialogBox.textContent = "They were white all over, except for their eyes, which were red.";
+      dialogBox.textContent = "They were white all over";
       dialogBox.style.color = "pink";
     } else if (outroTicker == 6) {
+      dialogBox.textContent = "Except for their eyes, which were red.";
+      dialogBox.style.color = "pink";
+      scene.remove( frontLight );
+    } else if (outroTicker == 7) {
       dialogBox.style.opacity = 0;
-      dialogBox.classList.remove('fadeout');
-      dialogBox.offsetWidth;
-      dialogBox.classList.add('fadeout');
-
-      woman.rotation.y = - Math.PI * 0.4 ;
-      woman.updateMatrix();
-
       outroTicker = 0;
       outro = false;
       story_state = 5;
-      controls.connect();
-      connectKey(document.body);
-    } 
+
+      const curtain = document.getElementById("curtain");
+      curtain.style.opacity = 1;
+      curtain.textContent = "THE END"
+
+      const cursor = document.getElementById("cursor");
+      cursor.style.display = 'none'
+
+      camera.position.y = -5
+    }
     outroTicker++;
   } else {
     if (!controls.isLocked || hoveredObject == null) return;
@@ -814,8 +862,6 @@ document.body.addEventListener('click', function(e) {
     } else if (lastObj.name == 'hoverable_woman') {
       console.log('lastObj:',lastObj);
       if (story_state == 0) {
-        action_woman.reset().play()
-
         rotateWomanToCamera();
   
         controls.disconnect();
@@ -827,21 +873,24 @@ document.body.addEventListener('click', function(e) {
         dialogBox.style.opacity = 0.7;
         intro = true;
       } else if (story_state == 4) {
-        let ye = camera.getWorldDirection().y;
-        console.log('ye:',ye);
-        // woman.rotation.y = 
+        rotateWomanToCamera();
+
         controls.disconnect();
         disconnectKey(document.body)// Prevent movement
+
+        action_woman.stop();
         
         const dialogBox = document.getElementById('dialog')
         dialogBox.textContent = "Umm, sorry but what was that store room about?"
         dialogBox.style.color = "white";
         dialogBox.style.opacity = 0.7;
+        camera.lookAt(woman.position.x, 1.8 , woman.position.z)
         outro = true;
       } else {
         showDialog("I shouldn't bother her again", "white")
       }
-  
+    } else if (lastObj.name == 'hoverable_table') {
+      // action_table.reset().play();
     } else {
       if (story_state == 1) {
         loadGhost(function(){
@@ -861,24 +910,27 @@ document.body.addEventListener('click', function(e) {
 window.addEventListener('resize', onWindowResize);
 
 function rotateWomanToCamera() {
-  let camdir = new THREE.Vector3();
-  camera.getWorldPosition(camdir);
-  console.log('camdir:', camdir);
+  woman.lookAt(new THREE.Vector3(camera.position.x, woman.position.y, camera.position.z))
+  woman.rotateY(Math.PI * 0.1)
 
-  let woman_dir = new THREE.Vector3();
-  woman.getWorldPosition(woman_dir);
-  console.log('woman_dir:', woman_dir);
+  // let camdir = new THREE.Vector3();
+  // camera.getWorldPosition(camdir);
+  // console.log('camdir:', camdir);
 
-  // let vec1 = new THREE.Vector2(woman_dir.x, woman_dir.z)
-  let vec1 = new THREE.Vector2(-1, 0);
-  let vec2 = new THREE.Vector2(camdir.x, camdir.z);
-  vec1.normalize();
-  vec2.normalize();
-  let dot = vec1.dot(vec2);
-  console.log('dot:', dot);
-  console.log('deg:', Math.acos(dot), ' rad');
-  woman.rotation.y = Math.acos(dot) - Math.PI * 0.4;
-  woman.updateMatrix();
+  // let woman_dir = new THREE.Vector3();
+  // woman.getWorldPosition(woman_dir);
+  // console.log('woman_dir:', woman_dir);
+
+  // // let vec1 = new THREE.Vector2(woman_dir.x, woman_dir.z)
+  // let vec1 = new THREE.Vector2(-1, 0);
+  // let vec2 = new THREE.Vector2(camdir.x, camdir.z);
+  // vec1.normalize();
+  // vec2.normalize();
+  // let dot = vec1.dot(vec2);
+  // console.log('dot:', dot);
+  // console.log('deg:', Math.acos(dot), ' rad');
+  // woman.rotation.y = Math.acos(dot) + (-Math.PI * 0.5);
+  // woman.updateMatrix();
 }
 
 function onWindowResize() {
