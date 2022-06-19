@@ -37,9 +37,29 @@
       color: white;
       font-size: x-large;
     }
+
+    #pos{
+      display: block;
+      position: absolute;
+      z-index: 99;
+      top: 50px;
+      left: 0;
+      width: 200px;
+      height: 100px;
+      padding-left: 10px;
+      padding-bottom: 10px;
+      color: white;
+      background-color: black;
+      opacity: 0.7;
+    }
   </style>
 </head>
 <body>
+	<div id="pos">
+		<p id="pos_x">x=</p>
+		<p id="pos_y">y=</p>
+		<p id="pos_z">z=</p>
+	</div>
   <div id="menu">
     <h2>Paused...</h2>
     <h4>Click to resume.</h4>
@@ -55,9 +75,11 @@
   <!-- <script src="../node_modules\three\examples\js\postprocessing\OutlinePass.js"></script> -->
   <!-- <script src="./node_modules/three/src/core/Clock.js"></script> -->
   <script src="../js/FPSControls.js"></script>
+	<script src="../node_modules\three\examples\js\libs\stats.min.js"></script>
 </body>
 </html>
 <script>
+const stats = new Stats();
 
 const scene = new THREE.Scene();
 // scene.background = new THREE.Color( 0x202020 );
@@ -236,13 +258,15 @@ document.body.addEventListener('click', function(e) {
   console.log('lastObj:',lastObj);
   if (lastObj.animations.length > 0) animateObject(lastObj);
 })
+document.body.appendChild( stats.dom );
 
-initFPSControls(document.body, camera);
 
 function animate() {
   if (controls.isLocked) requestAnimationFrame( animate );
-  raycasting()
+  stats.update();
+  raycasting();
   animateControls(camera, controls, boxes);
+  updateDebugScreen();
   if (animationMixer != null) animationMixer.update(clock.getDelta());
   renderer.render( scene, camera );
 }
@@ -286,4 +310,10 @@ function onWindowResize() {
   camera.updateProjectionMatrix();
   renderer.setSize( window.innerWidth, window.innerHeight );
 }
+function updateDebugScreen() {
+  document.getElementById('pos_x').innerText = "x=" + camera.position.x;
+  document.getElementById('pos_y').innerText = "y=" + camera.position.y;
+  document.getElementById('pos_z').innerText = "z=" + camera.position.z;
+}
+initFPSControls(document.body, camera);
 </script>

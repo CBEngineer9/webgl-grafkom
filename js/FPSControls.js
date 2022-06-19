@@ -2,8 +2,8 @@ var movementAmount = 0.02;
 var sprintMovementAmount = 0.03;
 var deltaMovement = movementAmount;
 var deltaFOV = 1;
-var initialFOV;
-var sprintFOV;
+var initialFOV = 75;
+var sprintFOV = 85;
 var personHeight = 1.8;
 var vAngle = 0;
 /**
