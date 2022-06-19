@@ -1,9 +1,9 @@
 var movementAmount = 0.02;
 var sprintMovementAmount = 0.03;
 var deltaMovement = movementAmount;
-var initialFOV = 75;
 var deltaFOV = 1;
-var sprintFOV = 80;
+var initialFOV;
+var sprintFOV;
 var personHeight = 1.8;
 var vAngle = 0;
 /**
@@ -22,6 +22,12 @@ var pressedKeys = {};
 var FPSCollisionBox = new THREE.Box3();
 var FPSCollisionBoxHelper;
 
+/**
+ * panggil fungsi ini untuk initialize FPS Controls
+ * @param {Dom} domElement 
+ * @param {THREE.Scene} scene 
+ * @param {THREE.Camera} camera 
+ */
 function initFPSControls(domElement, scene, camera) {
   connectKey(domElement);
   camera.position.y = personHeight;
@@ -91,9 +97,10 @@ function updateCollisionBox() {
 
 /**
  *  Animate the controls movement.
- *  @param {Camera} camera THREE.Camera
- *  @param {PointerLockControls} controls THREE.PointerLockControls 
- *  @param {Array<Box3>} boxes Array of THREE.Box3 to check collision
+ * fungsi ini dipanggil dalam fungsi animate().
+ *  @param {THREE.Camera} camera THREE.Camera
+ *  @param {THREE.PointerLockControls} controls THREE.PointerLockControls 
+ *  @param {Array<THREE.Box3>} boxes Array of THREE.Box3 to check collision
  */
 function animateControls(camera, controls, boxes) {
   move(pressedKeys, camera, controls, boxes);
@@ -108,8 +115,12 @@ function animateControls(camera, controls, boxes) {
  * @param {Array<Box3>} boxes Array of THREE.Box3 to check collision
  */
 function move(pressedKeys, camera, controls, boxes) {
+  // loop over movementKeyBinds
   for (const[key, value] of Object.entries(movementKeyBinds)) {
     if (key == 'sprint') sprint(camera);
+    // loop over semua value
+    // 'up': ['w', 'arrowup'],
+    // key : [value1, value2]
     for (let i = 0; i < value.length; i++) {
       let item = value[i];
       if (!pressedKeys[item]) continue;
@@ -137,23 +148,17 @@ function activateCameraBobbingWhenMoving() {
   let deltaNaikTurun = 1;
   if (isMoving()) {
     vAngle += deltaMovement * deltaNaikTurun;
-    let temp = (Math.pow(Math.sin(vAngle), 2) - 1) * 1/8
-    camera.position.y = temp + personHeight;
-    // console.log('temp:',temp);
-    // console.log('camera.position.y :',camera.position.y )
+    let bobbing = (Math.pow(Math.sin(vAngle), 2) - 1) * 1/8;
+    camera.position.y = bobbing + personHeight;
   }
 }
 
 function disconnectKey(domElement){
-  // domElement.onkeydown = onKeyDown;
-  // domElement.onkeyup = onKeyUp;
   domElement.ownerDocument.removeEventListener('keydown', onKeyDown);
   domElement.ownerDocument.removeEventListener('keyup', onKeyUp);
 }
 
 function connectKey(domElement) {
-  // domElement.onkeydown = onKeyDown;
-  // domElement.onkeyup = onKeyUp;
   domElement.ownerDocument.addEventListener('keydown', onKeyDown);
   domElement.ownerDocument.addEventListener('keyup', onKeyUp);
 }
