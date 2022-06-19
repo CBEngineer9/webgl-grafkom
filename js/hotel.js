@@ -157,9 +157,9 @@ document.body.addEventListener('keyup',(e) => {
 })
 
 //init raycasting
-var raycaster = new THREE.Raycaster();
-var pointer = new THREE.Vector2();
-var objectHoverHelper;
+var raycaster = new THREE.Raycaster(); 
+var pointer = new THREE.Vector2(); // posisi mouse
+var objectHoverHelper; 
 var hoveredObject;
 // set pointer location to center of the window
 pointer.x = 0;

@@ -1,8 +1,11 @@
-var movementAmount = 0.05;
-var sprintMovementAmount = 0.08;
+var movementAmount = 0.02;
+var sprintMovementAmount = 0.03;
 var deltaMovement = movementAmount;
 var initialFOV = 75;
+var deltaFOV = 1;
 var sprintFOV = 80;
+var personHeight = 1.8;
+var vAngle = 0;
 /**
  *  {dictionary} movementKeyBinds,
  *  Index is the command string, and the value is an array filled with {char} keys that will trigger the command string. 
@@ -17,13 +20,22 @@ var movementKeyBinds = {
 var pressedKeys = {};
 
 var FPSCollisionBox = new THREE.Box3();
+var FPSCollisionBoxHelper;
 
-function initFPSControls(domElement, camera) {
-  domElement.onkeydown = onKeyDown;
-  domElement.onkeyup = onKeyUp;
+function initFPSControls(domElement, scene, camera) {
+  connectKey(domElement);
+  camera.position.y = personHeight;
   initialFOV = camera.fov;
   sprintFOV = camera.fov + 10;
-  FPSCollisionBox.setFromCenterAndSize( new THREE.Vector3(camera.position.x, camera.position.y - 0.9, camera.position.z), new THREE.Vector3( 1, 2, 1 ) );
+  updateCollisionBox();
+  FPSCollisionBoxHelper = new THREE.Box3Helper( FPSCollisionBox );
+  scene.add(FPSCollisionBoxHelper);
+  //comment this to disable collision helper
+  toggleFPSCollisionBoxHelper();
+}
+
+function toggleFPSCollisionBoxHelper() {
+  FPSCollisionBoxHelper.visible = !FPSCollisionBoxHelper.visible;
 }
 
 function onKeyDown(event) {
@@ -41,6 +53,19 @@ function isSprinting() {
   return pressedKeys[movementKeyBinds['sprint']] || false;
 }
 
+function isMoving() {
+  let isMoving = false;
+  for (const[key, value] of Object.entries(movementKeyBinds)) {
+    if (key == 'sprint') continue;
+    for (let i = 0; i < value.length; i++) {
+      let item = value[i];
+      isMoving = isMoving || pressedKeys[item];
+      if (isMoving) return isMoving;
+    }
+  }
+  return isMoving;
+}
+
 /**
  * Sprint
  * @param {Camera} camera 
@@ -48,12 +73,12 @@ function isSprinting() {
 function sprint(camera) {
   if (!isSprinting()) {
     deltaMovement = movementAmount;
-    if (camera.fov > initialFOV) camera.fov -= 0.5;
+    if (camera.fov > initialFOV) camera.fov -= deltaFOV;
     camera.updateProjectionMatrix();
   }
   else if (isSprinting()){
     deltaMovement = sprintMovementAmount;
-    if (camera.fov < sprintFOV) camera.fov += 0.5;
+    if (camera.fov < sprintFOV) camera.fov += deltaFOV;
     camera.updateProjectionMatrix();
   }  
 }
@@ -61,7 +86,7 @@ function sprint(camera) {
  * Update the collision box of the camera.
  */
 function updateCollisionBox() {
-  FPSCollisionBox.setFromCenterAndSize( new THREE.Vector3(camera.position.x, camera.position.y - 0.9, camera.position.z), new THREE.Vector3( 1, 2, 1 ) );
+  FPSCollisionBox.setFromCenterAndSize( new THREE.Vector3(camera.position.x, camera.position.y - 0.9, camera.position.z), new THREE.Vector3( 0.7, 2, 0.7) );
 }
 
 /**
@@ -72,6 +97,7 @@ function updateCollisionBox() {
  */
 function animateControls(camera, controls, boxes) {
   move(pressedKeys, camera, controls, boxes);
+  activateCameraBobbingWhenMoving()
 }
 
 /**
@@ -79,7 +105,7 @@ function animateControls(camera, controls, boxes) {
  * @param {Dictionary} pressedKeys Index = pressed key, value = Boolean.
  * @param {Camera} camera THREE.Camera.
  * @param {PointerLockControls} controls THREE.PointerLockControls.
- *  @param {Array<Box3>} boxes Array of THREE.Box3 to check collision
+ * @param {Array<Box3>} boxes Array of THREE.Box3 to check collision
  */
 function move(pressedKeys, camera, controls, boxes) {
   for (const[key, value] of Object.entries(movementKeyBinds)) {
@@ -93,7 +119,7 @@ function move(pressedKeys, camera, controls, boxes) {
         case 'right': dRight = deltaMovement; break;
         case 'down': dForward = -deltaMovement; break;
         case 'left': dRight = -deltaMovement; break;
-      }      
+      }
       controls.moveForward(dForward);
       controls.moveRight(dRight);
       updateCollisionBox();
@@ -105,4 +131,29 @@ function move(pressedKeys, camera, controls, boxes) {
       });
     }
   }
+}
+
+function activateCameraBobbingWhenMoving() {
+  let deltaNaikTurun = 1;
+  if (isMoving()) {
+    vAngle += deltaMovement * deltaNaikTurun;
+    let temp = (Math.pow(Math.sin(vAngle), 2) - 1) * 1/8
+    camera.position.y = temp + personHeight;
+    // console.log('temp:',temp);
+    // console.log('camera.position.y :',camera.position.y )
+  }
+}
+
+function disconnectKey(domElement){
+  // domElement.onkeydown = onKeyDown;
+  // domElement.onkeyup = onKeyUp;
+  domElement.ownerDocument.removeEventListener('keydown', onKeyDown);
+  domElement.ownerDocument.removeEventListener('keyup', onKeyUp);
+}
+
+function connectKey(domElement) {
+  // domElement.onkeydown = onKeyDown;
+  // domElement.onkeyup = onKeyUp;
+  domElement.ownerDocument.addEventListener('keydown', onKeyDown);
+  domElement.ownerDocument.addEventListener('keyup', onKeyUp);
 }
